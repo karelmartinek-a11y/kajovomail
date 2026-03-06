@@ -26,5 +26,14 @@ jobs:
           script: |
             set -euo pipefail
             /opt/kajovomail/bootstrap/deploy-local.sh
-            curl -fsS http://127.0.0.1:18100/api/v1/health/live >/dev/null
-            curl -fsS http://127.0.0.1:18100/api/v1/health/ready >/dev/null
+            for i in $(seq 1 20); do
+              if curl -fsS http://127.0.0.1:18100/api/v1/health/live >/dev/null \
+                && curl -fsS http://127.0.0.1:18100/api/v1/health/ready >/dev/null; then
+                echo "Healthcheck OK (pokus $i)."
+                exit 0
+              fi
+              echo "Cekam na backend... pokus $i/20"
+              sleep 2
+            done
+            echo "Healthcheck timeout po 40s."
+            exit 1
