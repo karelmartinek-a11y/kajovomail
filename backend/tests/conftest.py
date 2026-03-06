@@ -14,6 +14,7 @@ from backend.app.db.session import engine
 import pytest_asyncio
 import pytest
 from httpx import AsyncClient
+from httpx import ASGITransport
 
 pytest_plugins = ["pytest_asyncio"]
 
@@ -30,5 +31,5 @@ async def prepare_db():
 
 @pytest_asyncio.fixture
 async def async_client(prepare_db):
-    async with AsyncClient(app=app, base_url='http://testserver') as client:
-        yield client
+    async with AsyncClient(transport=ASGITransport(app=app), base_url='http://testserver') as client:
+        yield client

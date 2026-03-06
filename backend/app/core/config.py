@@ -15,7 +15,7 @@ def _env(key: str, default: str | None = None) -> str | None:
 
 class Settings(BaseModel):
     project_name: str = "KajovoMail Backend"
-    environment: str = "local"
+    environment: str = _env("ENVIRONMENT", "local")
     debug: bool = False
 
     database_url: str

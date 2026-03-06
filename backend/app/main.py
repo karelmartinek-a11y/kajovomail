@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.api.v1.routers import auth_router, health_router, users_router, accounts_router
+from backend.app.api.v1.routers import api_router
 from backend.app.core.config import get_settings
 from backend.app.core.logging import configure_logging
 from backend.app.workers import ensure_worker, shutdown
@@ -19,10 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(health_router)
-app.include_router(auth_router)
-app.include_router(users_router)
-app.include_router(accounts_router)
+app.include_router(api_router)
 
 
 @app.on_event("startup")
