@@ -22,3 +22,4 @@
 ## Observability
 - Backend logs and Celery audit trails write to `/var/log/kajovomail`; event stream messages embed correlation IDs so the UI can display sync/* drafts/AI updates without polling.
 - Playwright acceptance tests (`npm run test:playwright`) run against the local SPA and ensure login, navigation, Compose autosave, and search targets work before release.
+- Android debug/release builds (`./gradlew assembleDebug`, `./gradlew bundleRelease`) also depend on `mail.hcasc.cz/api/v1`/`/events/ws`; treat the generated APK/AAB artifacts as production deliverables with their own release notes.

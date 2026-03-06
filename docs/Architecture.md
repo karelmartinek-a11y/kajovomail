@@ -24,6 +24,9 @@ KajovoMail is a server-centric system where FastAPI backend services expose a si
 5. Celery workers execute sync_account, generate_ai_response, refresh_offer_status, and event broadcasts with retry policies documented in docs/TestMatrix.md.
 6. Release gate scripts ensure no TODOs, manifest assets, OpenAPI coverage, and capability compliance before deployment.
 
+## Android client
+- Native Kotlin + Jetpack Compose stacks share the same API surface as the web/desktop clients. Navigation routes cover login, accounts/folders, messages/detail, compose, AI workflows, offers, and settings.
+- Session CSRF tokens get stored in `EncryptedSharedPreferences`, event stream updates land via HTTP/WebSockets, and mail payloads stay in memory so no local mailbox DB is created.
 ## Desktop client
 - The PySide6-based desktop app mirrors the web panels: accounts/folders on the left, message list in the middle, reading/compose center-right, and the AI/Offers column on the far right.
 - All desktop actions (multi-select move/copy, compose, AI orchestration, offers auditing) call `/api/v1` or `/api/v1/events/ws`; mail state is kept in RAM widgets and never stored on disk, fulfilling the "no local mailbox DB" requirement.

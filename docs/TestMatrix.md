@@ -11,4 +11,5 @@
 | Offers | Thread-linked state transitions, audit logs, WebSocket events | Every push | pytest backend/tests/test_offers.py |
 | Web UI | Login, navigation, compose autosave, search, event stream hints | Every push | Playwright `web/tests/e2e.spec.ts` (`npm run test:playwright`) |
 | Desktop UI | Desktop layout, session handling, compose/drafts, AI/offers panels | Every push | pytest-qt + `desktop/tests/test_main_window.py` |
+| Android UI | Login/login form, accounts navigation, compose/drafts, AI/offers flows | Every push | Compose UI test `android/src/androidTest/java/cz/kajovomail/LoginScreenTest.kt` + unit view model coverage |
 | Docs & Release | Manifest integrity, OpenAPI coverage, no TODO | Release gate | infra/release-gate.sh + documentation review |
