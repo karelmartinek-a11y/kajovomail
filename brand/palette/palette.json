@@ -1,0 +1,26 @@
+{
+  "appSlug": "kajovo-mail",
+  "appName": "KájovoMail",
+  "brand": {
+    "kajovoRed": "#FF0000",
+    "white": "#FFFFFF",
+    "kajovoInk": "#000000",
+    "metal": "#737578",
+    "subtleMetal": "#9AA0A6"
+  },
+  "uiNeutral": {
+    "ink900": "#111111",
+    "ink700": "#333333",
+    "ink500": "#666666",
+    "line300": "#E0E0E0",
+    "surface100": "#FFFFFF",
+    "surface200": "#F5F5F5",
+    "surface300": "#EEEEEE"
+  },
+  "state": {
+    "success": "#1B5E20",
+    "warning": "#E65100",
+    "error": "#B71C1C",
+    "info": "#0D47A1"
+  }
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 202.000 202.000" width="202.000" height="202.000">
+  <title>KájovoMail - mark</title>
+<g id="mark">
+  <title>KájovoMail mark</title>
+  <path d="M32 0 H170 A32 32 0 0 1 202 32 V170 A32 32 0 0 1 170 202 H32 A32 32 0 0 1 0 170 V32 A32 32 0 0 1 32 0 Z" fill="#000000" fill-rule="evenodd"/>
+  <path d="M98 34 H152 L170 52 V118 H98 Z" fill="#737578" fill-rule="evenodd"/>
+  <path d="M36 72 H146 L166 92 V148 A16 16 0 0 1 150 164 H52 A16 16 0 0 1 36 148 Z" fill="#737578" fill-rule="evenodd"/>
+  <path d="M46 86 L101 128 L156 86 V100 L101 142 L46 100 Z" fill="#000000" fill-rule="evenodd"/>
+  <path d="M172 36 H176 A3 3 0 0 1 179 39 V43 A3 3 0 0 1 176 46 H172 A3 3 0 0 1 169 43 V39 A3 3 0 0 1 172 36 Z" fill="#FF0000" fill-rule="evenodd"/>
+</g>
+</svg>

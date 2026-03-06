@@ -1,0 +1,17 @@
+{
+  "durationsMs": {
+    "microInteraction": 160,
+    "viewTransition": 220,
+    "modal": 180
+  },
+  "easing": {
+    "standard": "ease-out",
+    "enter": "ease-out",
+    "exit": "ease-in"
+  },
+  "reducedMotion": {
+    "respectPrefersReducedMotion": true,
+    "viewTransitionMs": 0,
+    "modalMs": 0
+  }
+}

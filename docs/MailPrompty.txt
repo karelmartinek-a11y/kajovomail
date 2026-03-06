@@ -1,0 +1,217 @@
+KájovoMail — prompty pro Codex CLI agenty
+
+Tento soubor obsahuje hotové prompty pro dva agenty:
+- lokální Codex CLI agent v repozitáři `c:\github\kajovomail`
+- Codex CLI agent přímo na Ubuntu serveru
+
+Používej je v uvedeném pořadí. Každý prompt je určený k přímému vložení do Codex CLI. Prompty jsou psané tak, aby agent pracoval samostatně, neptal se na zbytečné potvrzení a po každém kroku provedl vlastní kontrolu.
+
+Společná pravidla pro všechny prompty
+1. Jediný zdroj pravdy pro produktové a architektonické požadavky je `docs/KajovoMailZadaniFinal.md`.
+2. Návrhový draft ignoruj. Nepoužívej `docs/KajovoMailZadaniDraft.md`.
+3. Manifest designu uložený v `docs/` a veškeré assety v `brand/` jsou závazné pro brand, signaci, logo, palety, tokeny a motion.
+4. Cílový produkční hostname je `mail.hcasc.cz`.
+5. Na Ubuntu serveru už běží `hotel.hcasc.cz`, `dagmar.hcasc.cz` a `api.hcasc.cz`. Nesmí být poškozeny, vypnuty ani přepsány.
+6. Implementuj skutečný software. Neponechávej `TODO`, `TBD`, stuby, placeholder texty ani falešné obrazovky.
+7. Dodrž server-centric architekturu, žádné přímé volání OpenAI z klientů a žádná perzistentní lokální databáze pošty na desktopu ani Androidu.
+8. Po každém promptu proveď relevantní testy, oprav nalezené chyby, udělej smysluplný commit a pokud existuje vzdálený GitHub repozitář, změny pushni.
+9. Když chybí externí credential nebo jiný tvrdý blokátor, dokonči vše, co dokončit jde, a na konci vypiš jediný stručný blokátor s přesným názvem chybějící věci.
+
+Doporučené pořadí spuštění
+1. Prompt 01 — lokální agent
+2. Prompt 02 — lokální agent
+3. Prompt 03 — lokální agent
+4. Prompt 04 — lokální agent
+5. Prompt 05 — lokální agent
+6. Prompt 06 — lokální agent
+7. Prompt 07 — lokální agent
+8. Prompt 08 — serverový agent
+9. Nastavit DNS pro `mail.hcasc.cz`
+10. Prompt 09 — lokální agent
+
+============================================================
+PROMPT 01 — LOKÁLNÍ AGENT — bootstrap repozitáře a veřejný GitHub
+============================================================
+Pracuješ v lokálním repozitáři `c:\github\kajovomail`. Jediný zdroj pravdy je `docs/KajovoMailZadaniFinal.md`. Návrhový draft ignoruj. Manifest v `docs/` a assety v `brand/` jsou závazné. Cílový hostname pro produkci je `mail.hcasc.cz`.
+
+Proveď toto:
+1. Projdi stav repozitáře a potvrď si, že zatím obsahuje hlavně dokumentaci a brand assety.
+2. Inicializuj git, pokud ještě není inicializovaný. Použij výchozí branch `main`.
+3. Přidej repo hygiene soubory pro monorepo: `.gitignore`, `.editorconfig`, `.gitattributes`, případně další nezbytné soubory pro konzistentní textové formáty a ignorování build artefaktů.
+4. Vytvoř cílovou kostru monorepa podle zadání minimálně pro `backend/`, `web/`, `desktop/`, `android/`, `infra/`, `scripts/`, `.github/workflows/` a případné podpůrné adresáře.
+5. Připrav základní top-level dokumentaci: `README.md` s krátkým popisem produktu, přehledem monorepa, požadovaným stackem a odkazem na `docs/KajovoMailZadaniFinal.md`. Nepřidávej licenci, pokud ji vlastník explicitně nezadal.
+6. Pokud je GitHub CLI přihlášený, vytvoř nový veřejný GitHub repozitář z aktuálního adresáře. Preferovaný název je `kajovomail`. Pokud je v účtu obsazený, použij `kajovomail-app`. Přidej remote `origin`, pushni `main` a ověř, že repozitář je veřejný.
+7. Pokud GitHub CLI přihlášený není, stejně udělej všechny lokální přípravy a na konci vypiš jediný blokátor s přesným příkazem, který je potřeba udělat pro přihlášení do `gh`.
+8. Vytvoř soubor `docs/BootstrapStatus.md`, kam zapíšeš aktuální remote URL, branch, stručný stav repozitáře a doporučený další krok.
+9. Udělej commit s významovým názvem typu `chore: bootstrap kajovomail monorepo` a pokud remote existuje, pushni ho.
+10. Na konci vypiš stručné shrnutí včetně veřejné URL GitHub repozitáře.
+
+============================================================
+PROMPT 02 — LOKÁLNÍ AGENT — architektonický základ a backend platforma
+============================================================
+Navazuj na aktuální stav repozitáře. Jediný zdroj pravdy je `docs/KajovoMailZadaniFinal.md`. Návrhový draft ignoruj. Dodrž manifest a brand assety.
+
+Vybuduj základ řešení tak, aby nevznikla jen kostra, ale funkční platforma pro další kroky.
+
+Proveď toto:
+1. Doplň architektonickou dokumentaci minimálně do souborů `docs/Architecture.md`, `docs/Security.md`, `docs/Deployment.md` a `docs/TestMatrix.md`. Dokumenty musí vycházet ze zadání a zvolených technických rozhodnutí. Neodkazuj na neexistující budoucí práci.
+2. V backendu vytvoř modulární monolit ve FastAPI pro Python 3.12+ s jasně oddělenými bounded contexts minimálně pro Auth, Users & Preferences, Accounts & Credentials, Mailbox Sync, Folders, Messages, Drafts & Compose, Send, Search, AI Orchestration, Offers, Audit & Security a Notifications & Events.
+3. Založ backendový projekt se skutečnou strukturou aplikace, konfiguračním modelem, dependency injection, strukturovaným logováním, korelačním ID, healthcheck a readiness endpointy.
+4. Zvol robustní datovou vrstvu nad PostgreSQL a Redis. Přidej migrační mechanismus, doporučeně Alembic. Připrav `.env.example` a rozumné `docker compose` prostředí pro lokální vývoj.
+5. Implementuj autentizaci, session management, bezpečné hashování hesel, role, reset/change password workflow, logout a logout-all-sessions. Zajisti audit log bezpečnostně významných událostí.
+6. Implementuj základ administrace pro serverové OpenAI nastavení a uživatelská nastavení tak, aby klíč nikdy neodtékal do klientů.
+7. Publikuj verzi API pod `/api/v1`, připrav jednotný error envelope a OpenAPI generaci.
+8. Přidej worker vrstvu pro asynchronní úlohy. Zvol řešení vhodné pro Redis a retry politiku. Rozhodnutí zdokumentuj.
+9. Připrav první sadu testů pro autentizaci, session, konfiguraci, health endpointy a základní API kontrakty.
+10. Ujisti se, že backend lze lokálně spustit přes Docker Compose a že testy běží bez ručních zásahů.
+11. Udělej commit a push.
+
+============================================================
+PROMPT 03 — LOKÁLNÍ AGENT — mailový backend, synchronizace, AI a nabídky
+============================================================
+Navazuj na existující backend. Jediný zdroj pravdy je `docs/KajovoMailZadaniFinal.md`. Dodrž server-centric architekturu, žádná přímá OpenAI volání z klientů, žádná lokální perzistentní databáze pošty v klientech.
+
+Dodej funkční backendovou doménu KájovoMailu.
+
+Proveď toto:
+1. Implementuj moduly pro e-mailové účty, capability discovery, test připojení, bezpečné uložení credentialů a podporu více účtů na uživatele.
+2. Implementuj IMAP jako plnohodnotný režim a POP3 jako omezený režim s jasně odlišenými capability a omezeními v API i datech.
+3. Implementuj synchronizační model: počáteční napojení účtu, inkrementální sync, ruční refresh, periodický background sync, retry, idempotenci, obnovu po přerušení a promítání změn přes event vrstvu.
+4. Implementuj strom složek, default/system vs user folders, create/rename/delete/move, oblíbené složky a správu omezení podle capability provideru.
+5. Implementuj list/detail zpráv, threading podle RFC hlaviček, mark read/unread, flag/unflag, move, copy, archive, delete, bulk operace a virtuální pohledy Nepřečtené, Označené vlajkou a S přílohami.
+6. Implementuj serverové vyhledávání včetně syntaxe `AND`, `OR`, `NOT`, přesné fráze v uvozovkách, scope current folder, current account a all folders. Výsledky musí být stránkované a stabilně řazené. Je přípustná kombinace provider search a pomocného serverového indexu. Rozhodnutí zdokumentuj.
+7. Implementuj drafty, autosave, compose, reply, reply all, forward a idempotentní odesílání. Každý odchozí e-mail musí vzniknout jako `multipart/alternative` v požadovaném pořadí `text/plain` a `text/html`.
+8. Implementuj konzervativní HTML rendering a validaci tak, aby nevznikaly zakázané prvky, externí obrázky, inline logo ani rizikové HTML.
+9. Implementuj přílohy jako streamované přenosy přes backend.
+10. Implementuj AI orchestrace přes OpenAI Responses API se structured output nebo ekvivalentně přísným schématem. Backend musí generovat strukturovaný meziformát a z něj deterministicky vytvořit plain text, HTML a preview. Produkční default nastav na `store: false`.
+11. Implementuj ochranu AI soukromí, schema validaci, request policy a audit/metadata logy bez úniku citlivého obsahu do běžných logů.
+12. Implementuj funkci `Nabídky`, vazbu na thread nebo message, povinná pole, auditované přechody stavů a API endpointy.
+13. Implementuj WebSocket endpoint `/api/v1/events/ws` nebo kompatibilní event stream splňující zadání.
+14. Rozšiř OpenAPI tak, aby pokrývalo minimální endpointy ze zadání.
+15. Přidej integrační testy konektorů. Pro automatizované testy použij reálný test harness, například GreenMail v kontejneru, nebo srovnatelně věrné testovací prostředí pro IMAP, POP3 a SMTP. Přidej testy sync/retry, MIME generování, AI schema validace, Offers workflow a kritických error stavů.
+16. Aktualizuj dokumentaci a testovací matici podle reálně implementovaného stavu.
+17. Udělej commit a push.
+
+============================================================
+PROMPT 04 — LOKÁLNÍ AGENT — webová aplikace pro desktop, tablet a mobil
+============================================================
+Navazuj na aktuální backend a dokumentaci. Jediný zdroj pravdy je `docs/KajovoMailZadaniFinal.md`. Manifest a assety v `brand/` jsou závazné. Cílový hostname je `mail.hcasc.cz`.
+
+Vytvoř skutečnou webovou aplikaci, ne maketu.
+
+Proveď toto:
+1. V `web/` založ React + TypeScript aplikaci. Zvol takovou strukturu, aby byla dlouhodobě udržitelná. Použij serverové API jako jediný zdroj dat.
+2. Implementuj adaptivní UI s automatickým rozlišením pro desktop, tablet a mobil. Na desktopu zachovej bohatý vícepanelový layout, na tabletu a mobilu chování rozumně přeskup tak, aby zůstala funkční parita tam, kde to dává smysl.
+3. Respektuj manifest, signaci, logo, paletu, tokeny a motion. Vytvoř build-time nebo runtime mechanizmus, který spotřebuje závazné brand assety a tokeny bez jejich přepisování.
+4. Implementuj login, správu účtů, složky, list/detail zpráv, search, virtuální pohledy, compose, drafty, AI panel, nabídky, settings a security/session obrazovky.
+5. Pro web použij bezpečný session model vhodný pro stejnou doménu, preferovaně HttpOnly secure cookies. Doplň CSRF ochranu tam, kde je relevantní, bezpečnostní hlavičky a obranu proti běžným XSS vektorům.
+6. Implementuj loading, empty, error a offline stavy. Neponechávej generické placeholdery.
+7. Vytvoř přístupné formuláře, focus stavy a validace alespoň na úrovni odpovídající zadání.
+8. Napoj web na event stream nebo WebSocket a průběžně promítej sync, draft a AI změny.
+9. Přidej automatizované UI testy webu, doporučeně Playwright. Pokryj kritické akceptační scénáře ze zadání.
+10. Připrav produkční build a dokumentuj, jak je web nasazen za reverzní proxy pro `mail.hcasc.cz`.
+11. Udělej commit a push.
+
+============================================================
+PROMPT 05 — LOKÁLNÍ AGENT — desktop aplikace pro Windows a macOS
+============================================================
+Navazuj na existující backend a web. Jediný zdroj pravdy je `docs/KajovoMailZadaniFinal.md`. Desktop musí být skutečná PySide6 / Qt 6 aplikace, ne WebView shell.
+
+Proveď toto:
+1. V `desktop/` vytvoř Python aplikaci s PySide6 / Qt 6.
+2. Implementuj spuštění v maximalizovaném okně a povinný desktop layout: levý panel s účty a složkami, střední panel se seznamem zpráv, pravý hlavní panel s reading pane a compose zónou, pravý úzký panel pro AI zadání a nabídky, toolbar s požadovanými akcemi.
+3. Napoj aplikaci výhradně na serverové API a event stream. Nepoužívej žádnou perzistentní lokální databázi pošty. Povolena je pouze RAM cache a secure storage pro session token.
+4. Implementuj ergonomii desktopu včetně multi-select chování, drag and drop MOVE by default, explicitní COPY akce a vhodných klávesových zkratek.
+5. Implementuj nastavení, AI panel, nabídky, compose workflow, preview a bezpečné zacházení se session.
+6. Přidej základní desktop UI testy a smoke testy, například přes `pytest-qt` nebo ekvivalent.
+7. Připrav build skripty pro Windows a macOS, doporučeně přes PyInstaller nebo obdobně reprodukovatelný build. Vytvoř i dokumentaci k buildům.
+8. Aktualizuj dokumentaci tak, aby z ní bylo jasné, jak desktop funguje, co ukládá lokálně a jak je zajištěno, že neporuší zákaz lokální poštovní databáze.
+9. Udělej commit a push.
+
+============================================================
+PROMPT 06 — LOKÁLNÍ AGENT — nativní Android aplikace
+============================================================
+Navazuj na existující backend. Jediný zdroj pravdy je `docs/KajovoMailZadaniFinal.md`. Android musí být nativní Kotlin + Jetpack Compose aplikace, ne WebView wrapper.
+
+Proveď toto:
+1. V `android/` vytvoř skutečný Android Studio projekt s Kotlinem a Jetpack Compose.
+2. Implementuj minimálně obrazovky login, účty a složky, seznam zpráv, detail zprávy, compose/reply, settings, AI panel a nabídky.
+3. Zajisti adaptivní chování pro telefon i tablet. Respektuj system accessibility, font scaling, dark mode a reduced-motion ekvivalent.
+4. Napoj aplikaci výhradně na serverové API a event stream. Nepoužívej lokální perzistentní databázi pošty. Session token ukládej jen do bezpečného úložiště.
+5. Implementuj search, virtuální pohledy, drafty, compose, offers workflow a AI generování s nutnou uživatelskou revizí před odesláním.
+6. Přidej unit testy a alespoň základní Compose UI testy pro kritické scénáře.
+7. Připrav debug build, release build pipeline a dokumentaci k APK/AAB artefaktům.
+8. Aktualizuj dokumentaci a udělej commit a push.
+
+============================================================
+PROMPT 07 — LOKÁLNÍ AGENT — CI/CD, release gate, build artefakty a deploy připravenost
+============================================================
+Navazuj na celý aktuální repozitář. Jediný zdroj pravdy je `docs/KajovoMailZadaniFinal.md` a závazný brand manifest v `docs/` plus assety v `brand/`.
+
+Dodej provozně použitelný CI/CD a release gate.
+
+Proveď toto:
+1. Doplň adresář `infra/` o produkční nasazení pro Ubuntu server. Preferuj Docker Compose s kontejnery pro backend, worker, web, PostgreSQL a Redis. Navrhni to tak, aby hostitelský Nginx mohl reverzně proxyovat na localhost porty bez kolize s ostatními weby na serveru.
+2. Přidej `Dockerfile` pro backend i web, vývojové compose soubory, produkční compose soubory a potřebné skripty v `scripts/` pro migrace, deploy, smoke testy, backup a kontrolu release gate.
+3. Vytvoř GitHub Actions workflow pro CI na push a pull request. Workflow musí spustit lint, testy a build ověření backendu, webu, desktopu a Androidu v rozsahu, který je automatizovatelný na GitHub-hosted runners.
+4. Vytvoř samostatné workflow pro desktop build artefakty minimálně pro Windows a macOS. Pokud chybí signovací certifikáty, vytvářej unsigned nebo test-signed artefakty a tuto skutečnost explicitně dokumentuj.
+5. Vytvoř workflow pro Android build artefakty. Pokud chybí release signing secrets, vytvoř debug APK a unsigned release artefakt s jasnou dokumentací, jak se signing doplní.
+6. Vytvoř deploy workflow, které po úspěšném CI a pushi na `main` provede SSH deploy na Ubuntu server. Nepoužívej self-hosted runner pro veřejný repozitář. Použij GitHub-hosted runner a SSH deploy.
+7. Zaveď release gate skript, který zablokuje release při porušení manifestu, chybějících assetech, výskytu `TODO`/`TBD`/stubů/placeholder textů, chybějící OpenAPI dokumentaci, přímém volání OpenAI z klienta nebo při lokální perzistentní databázi pošty v desktopu či Androidu.
+8. Vygeneruj a ulož OpenAPI specifikaci do `docs/`.
+9. Aktualizuj `docs/Deployment.md`, `docs/Security.md`, `docs/TestMatrix.md` a případně další provozní dokumenty tak, aby odpovídaly skutečnému stavu repozitáře.
+10. V repozitáři vytvoř a commitni pouze veřejnou část deploy SSH klíče pro GitHub Actions do `infra/deploy/keys/github_actions_deploy_ed25519.pub`. Soukromou část necommituj. Ulož ji lokálně tak, aby ji šel později nahrát do GitHub secretu `PROD_SSH_KEY`, a zapiš její lokální cestu do `docs/BootstrapStatus.md` nebo jiného bezpečně necommitovaného lokálního výstupu, pokud je to možné bez úniku tajných údajů.
+11. Ověř, že celé monorepo je konzistentní, že dokumentace odpovídá realitě a že nevznikly mrtvé soubory.
+12. Udělej commit a push.
+
+============================================================
+PROMPT 08 — SERVEROVÝ AGENT — příprava Ubuntu serveru a bezpečné nasazení
+============================================================
+Nejprve nahraď text `<PUBLIC_GITHUB_REPO_URL>` skutečnou veřejnou HTTPS URL repozitáře vytvořenou v promptu 01. Jinak prompt nespouštěj.
+
+Pracuješ přímo na Ubuntu serveru, kde už běží `hotel.hcasc.cz`, `dagmar.hcasc.cz` a `api.hcasc.cz`. Cílový nový web je `mail.hcasc.cz`. Nesmíš poškodit ani změnit konfiguraci stávajících portálů. Jediný zdroj pravdy pro produkt je `docs/KajovoMailZadaniFinal.md` v repozitáři. Brand manifest a assety respektuj beze změny.
+
+Proveď toto:
+1. Zkontroluj existující reverzní proxy, Nginx site konfigurace, obsazené porty, Docker instalaci, systémové služby a stav TLS certifikátů. Vše si zdokumentuj do `/opt/kajovomail/bootstrap/server-audit.txt`.
+2. Vytvoř odděleného systémového uživatele `kajovomail-deploy`, pokud ještě neexistuje. Připrav mu domovský adresář, přístup do Docker group a bezpečný SSH přístup.
+3. Připrav adresáře minimálně `/opt/kajovomail/app`, `/opt/kajovomail/env`, `/opt/kajovomail/backups`, `/opt/kajovomail/bootstrap`, `/var/log/kajovomail`.
+4. Nainstaluj nebo ověř přítomnost `git`, `docker`, `docker compose plugin`, `nginx`, `certbot` a vše nutné pro provoz. Nic neodinstalovávej a nepřepisuj stávající weby.
+5. Naklonuj nebo aktualizuj veřejný repozitář `<PUBLIC_GITHUB_REPO_URL>` do `/opt/kajovomail/app`.
+6. Z repozitáře načti veřejný klíč `infra/deploy/keys/github_actions_deploy_ed25519.pub` a přidej ho do `~kajovomail-deploy/.ssh/authorized_keys`.
+7. Vytvoř produkční env soubor například `/opt/kajovomail/env/prod.env` s vygenerovanými bezpečnými tajnými hodnotami pro aplikaci a databázi. Klíč `OPENAI_API_KEY` ponech prázdný, pokud není bezpečně dostupný. Aplikace ale musí tuto absenci řešit korektně a nesmí kvůli tomu padat celý systém.
+8. Připrav produkční data adresáře pro PostgreSQL a Redis tak, aby data zůstala perzistentní mimo git checkout.
+9. Připrav Nginx site konfiguraci pro `mail.hcasc.cz` tak, aby hostitelský Nginx proxyoval na lokální porty KájovoMailu bez kolize s ostatními portály. Použij konzervativní bezpečnostní hlavičky a websocket podporu.
+10. Pokud DNS pro `mail.hcasc.cz` už míří na tento server, vyřiď TLS certifikát přes Let’s Encrypt a aktivuj HTTPS. Pokud DNS ještě nemíří, nech konfiguraci připravenou a na konci napiš jediný blokátor `DNS ještě nesměruje na server`.
+11. Proveď první lokální deploy z repozitáře přes připravené compose a deploy skripty. Spusť migrace, backend, worker, PostgreSQL, Redis a web.
+12. Ověř healthcheck, readiness, lokální HTTP odpověď, logy a to, že nic nepoškodilo ostatní weby na serveru.
+13. Zapiš do `/opt/kajovomail/bootstrap/deploy-facts.txt` přesné hodnoty `PROD_USER=kajovomail-deploy`, `PROD_PORT=22`, cestu k env souboru, cestu k checkoutu a výsledek DNS/TLS kontroly.
+14. Na konci vypiš stručné shrnutí včetně toho, zda je server připravený na GitHub Actions SSH deploy.
+
+============================================================
+PROMPT 09 — LOKÁLNÍ AGENT — dokončení GitHub Actions deploye, první produkční nasazení a release artefakty
+============================================================
+Tento prompt spouštěj až poté, co:
+- proběhl prompt 08,
+- DNS záznam pro `mail.hcasc.cz` už směřuje na Ubuntu server,
+- veřejný GitHub repozitář existuje,
+- v repozitáři je vytvořen veřejný deploy klíč `infra/deploy/keys/github_actions_deploy_ed25519.pub` a lokálně existuje odpovídající soukromý klíč.
+
+Jediný zdroj pravdy je `docs/KajovoMailZadaniFinal.md`. Draft ignoruj. Cílový hostname je `mail.hcasc.cz`.
+
+Proveď toto:
+1. Ověř `gh auth status`. Pokud není GitHub CLI přihlášený, vypiš jediný blokátor a skonči až po dokončení všeho ostatního, co nevyžaduje GitHub API.
+2. Vezmi lokálně uložený soukromý deploy klíč z promptu 07 a nastav GitHub Actions secrets:
+   - `PROD_HOST=mail.hcasc.cz`
+   - `PROD_PORT=22`
+   - `PROD_USER=kajovomail-deploy`
+   - `PROD_KNOWN_HOSTS` naplň výstupem `ssh-keyscan -H mail.hcasc.cz`
+   - `PROD_SSH_KEY` naplň obsahem lokálního soukromého deploy klíče
+3. Ověř, že workflow pro CI, build a deploy jsou v GitHubu aktivní a že push na `main` spouští testy a po jejich úspěchu deploy.
+4. Pokud je třeba, doplň branch protection pro `main`, aby nešlo obejít kritické workflow. Nezaváděj proces, který znemožní běžnou údržbu jednočlennému vlastníkovi.
+5. Proveď poslední konsolidaci repozitáře, spusť lokální testy, commitni případné opravy a pushni `main`.
+6. Sleduj GitHub Actions do dokončení. Pokud deploy workflow na první pokus selže, oprav příčinu v repozitáři nebo konfiguraci a celý proces zopakuj.
+7. Po úspěšném deployi ověř web `mail.hcasc.cz`, API healthcheck, běžící kontejnery, migrační stav a základní smoke scénář přihlášení.
+8. Vytvoř první verzi nebo tag, například `v0.1.0`, pokud to stav repozitáře umožňuje, a ověř, že se vytvoří build artefakty pro desktop a Android. Pokud chybí signing secrets, artefakty musí být jasně označené jako unsigned nebo debug.
+9. Aktualizuj `docs/BootstrapStatus.md` o finální URL repozitáře, workflow přehled, stav deploye a umístění build artefaktů.
+10. Na konci vypiš stručný finální stav: GitHub URL, stav CI, stav CD, stav webu `mail.hcasc.cz`, dostupnost desktop artefaktů a dostupnost Android artefaktů.
+

@@ -1,0 +1,136 @@
+KájovoMail — mainbook pro použití promptů a pro věci mimo Codex CLI
+
+Tento soubor vysvětluje, jak použít `docs/MailPrompty.txt`, co přesně mají jednotlivé prompty vyrobit a které věci jsou skutečně mimo možnosti Codex CLI agenta.
+
+1. Co tyto prompty dělají
+Prompty jsou navržené pro situaci, kdy aktuální repozitář ještě neobsahuje hotovou aplikaci, ale pouze zadání a brand assety. Jejich cílem je dovést repozitář od dokumentačního základu až ke stavu, kdy existuje:
+- veřejný GitHub repozitář,
+- monorepo se serverem, webem, desktopem a Androidem,
+- automatizované testy,
+- GitHub Actions CI/CD,
+- produkční nasazení na Ubuntu serveru,
+- web dostupný na `mail.hcasc.cz`,
+- build artefakty pro desktop a Android.
+
+2. Který prompt se spouští kde
+Lokální agent v `c:\github\kajovomail` spouští prompt 01 až 07 a potom prompt 09.
+Serverový agent na Ubuntu serveru spouští prompt 08.
+
+Doporučené pořadí je:
+1. Prompt 01 — lokální agent
+2. Prompt 02 — lokální agent
+3. Prompt 03 — lokální agent
+4. Prompt 04 — lokální agent
+5. Prompt 05 — lokální agent
+6. Prompt 06 — lokální agent
+7. Prompt 07 — lokální agent
+8. Prompt 08 — serverový agent
+9. ruční nastavení DNS
+10. Prompt 09 — lokální agent
+
+3. Jaký provozní model tyto prompty předpokládají
+Prompty předpokládají tento model nasazení:
+- zdrojové kódy jsou v lokálním repozitáři a zároveň v novém veřejném GitHub repozitáři,
+- GitHub Actions na GitHub-hosted runnerech dělají CI,
+- produkční deploy se nedělá přes self-hosted runner, ale přes SSH deploy z GitHub Actions do Ubuntu serveru,
+- na serveru běží KájovoMail izolovaně od ostatních webů, s vlastními adresáři, vlastními kontejnery a vlastní Nginx site konfigurací,
+- hostitelský Nginx pouze reverse proxyuje na localhost porty KájovoMailu,
+- PostgreSQL a Redis pro KájovoMail běží odděleně a jejich data jsou perzistentně uložená mimo git checkout,
+- desktop a Android nejsou nasazovány na server, ale vznikají jako GitHub Actions build artefakty.
+
+Tento model je zvolený záměrně. Pro veřejný GitHub repozitář je bezpečnější nepoužívat self-hosted GitHub runner na produkčním serveru.
+
+4. Co je skutečně nutné udělat mimo Codex CLI
+Tvůj odhad, že mimo prompty bude nutné hlavně DNS, je z velké části správný. Přesněji rozděleno:
+
+4.1 Věci, které jsou opravdu mimo Codex CLI a musí je udělat člověk nebo externí služba
+A. DNS záznam pro `mail.hcasc.cz`
+To je skutečně hlavní nevyhnutelný ruční krok. Dokud nebude `mail.hcasc.cz` směrovat na správný server, nepůjde korektně dokončit veřejné HTTPS nasazení a GitHub Actions deploy se bude hůř finalizovat.
+
+Doporučené minimum:
+- A záznam `mail.hcasc.cz` -> veřejná IPv4 serveru
+- případně AAAA záznam -> veřejná IPv6 serveru, pokud ji server používá
+
+B. Externí účty a reálné tajné hodnoty, které agent neumí sám „vymyslet“
+Sem patří hlavně:
+- skutečný OpenAI API klíč pro produkční AI funkce,
+- případné budoucí signing certifikáty pro Windows a macOS,
+- případné release signing údaje pro Android/Google Play,
+- případné Apple notarizační údaje, pokud budeš chtít distribuovat macOS build jako důvěryhodný produkční artefakt.
+
+Codex CLI umí tyto hodnoty uložit a napojit, ale neumí je za tebe založit u externího poskytovatele.
+
+4.2 Věci, které Codex CLI zvládne, ale jen pokud už má přístup
+Tyto věci nemusíš dělat ručně, pokud jsou agenti už připraveni a mají potřebná oprávnění:
+- vytvoření veřejného GitHub repozitáře přes `gh`,
+- push do GitHubu,
+- vytvoření GitHub Actions workflow,
+- nastavení GitHub Actions secrets,
+- příprava Ubuntu serveru,
+- instalace Dockeru, Compose, Nginxu a Certbotu,
+- clone repozitáře na server,
+- deploy přes SSH,
+- vystavení TLS certifikátu po zprovoznění DNS.
+
+Prakticky to znamená toto: pokud je lokální agent už přihlášený do GitHub CLI a serverový agent má sudo práva, žádný další ruční zásah kromě DNS není nutný pro základní webové nasazení.
+
+5. Co je dobré vědět o OpenAI klíči
+Aplikaci lze vybudovat, otestovat a nasadit i bez vyplněného `OPENAI_API_KEY`. V takovém případě ale AI generování odpovědí nebude v produkci funkční a musí selhávat korektní uživatelskou chybou, ne pádem systému.
+
+Jestli chceš mít hotový i AI modul v provozu, je potřeba skutečný produkční OpenAI klíč doplnit do serverového environmentu. To není chyba promptů ani Codexu. Je to externí credential.
+
+6. Co je dobré vědět o desktop a Android build artefaktech
+Prompty směřují k tomu, aby GitHub Actions vyráběly artefakty pro:
+- Windows desktop build,
+- macOS desktop build,
+- Android APK nebo AAB.
+
+Bez signing certifikátů a store credentialů je ale normální, že:
+- Windows build bude unsigned nebo test-signed,
+- macOS build bude unsigned a bez notarizace,
+- Android release build bude unsigned, nebo se vytvoří debug APK.
+
+To nebrání vývoji ani internímu testování. Pro veřejnou distribuci přes store nebo bez varování operačního systému jsou signing a notarizační kroky samostatná externí agenda.
+
+7. Proč jsou prompty rozdělené do více kroků
+Repozitář nezačíná s hotovým kódem, takže jeden obří prompt by měl vysoké riziko nekonzistence. Rozdělení do více kroků drží čistou sekvenci:
+- nejdřív repozitář a git,
+- potom architektonický a backendový základ,
+- potom doménová logika,
+- potom jednotliví klienti,
+- potom CI/CD a release gate,
+- potom server,
+- nakonec produkční deploy po zprovoznění DNS.
+
+8. Co přesně čekat po promptu 08
+Po promptu 08 má být server připravený, ale veřejná dostupnost `mail.hcasc.cz` přes HTTPS může být stále blokovaná DNS. V ideálním případě bude hotovo toto:
+- existuje deploy user `kajovomail-deploy`,
+- existují adresáře `/opt/kajovomail/*`,
+- repozitář je naklonovaný na serveru,
+- hostitelský Nginx má připravenou site konfiguraci,
+- KájovoMail kontejnery jdou spustit,
+- deploy klíč pro GitHub Actions je autorizovaný,
+- ostatní weby na serveru zůstaly beze změny.
+
+9. Co přesně čekat po promptu 09
+Po promptu 09 má být splněno toto:
+- GitHub Actions umí po pushi na `main` spustit testy,
+- po úspěchu testů se spustí deploy pipeline,
+- web `mail.hcasc.cz` běží na cílovém serveru,
+- backend, worker, PostgreSQL a Redis běží,
+- OpenAPI, testy a provozní dokumentace jsou v repozitáři,
+- desktop a Android buildy vznikají jako artefakty workflow.
+
+10. Poznámka k hostname v provozu
+Prompty jsou připravené pro `mail.hcasc.cz`, protože to je aktuální cílový provozní hostname, který jsi zadal pro nasazení na server. Všechny deploy a DNS kroky jsou proto vygenerované právě pro tuto doménu.
+
+11. Minimální ruční checklist před finálním spuštěním promptu 09
+Než spustíš prompt 09, ověř jen tyto body:
+- `mail.hcasc.cz` už ukazuje na správný server,
+- server prompt 08 doběhl bez zásahu do ostatních portálů,
+- lokální agent má přístup do GitHub CLI,
+- soukromá část deploy SSH klíče z promptu 07 existuje lokálně a nebyla commitnutá do repozitáře.
+
+12. Stručný závěr
+Pro základní vybudování repozitáře, CI/CD, serverového deploye a zprovoznění webu stačí, aby byly oba agenti funkční a aby byl ručně nastaven DNS záznam. Další ruční zásahy jsou jen podmíněné tím, zda chceš mít hned v první iteraci také produkční OpenAI klíč a plně podepsané distribuční buildy pro desktop a Android.
+
