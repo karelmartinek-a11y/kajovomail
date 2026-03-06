@@ -10,4 +10,5 @@
 | AI | Structured output validation, privacy rules, store=false default | Every push | pytest backend/tests/test_ai.py (checks schema + privacy metadata) |
 | Offers | Thread-linked state transitions, audit logs, WebSocket events | Every push | pytest backend/tests/test_offers.py |
 | Web UI | Login, navigation, compose autosave, search, event stream hints | Every push | Playwright `web/tests/e2e.spec.ts` (`npm run test:playwright`) |
+| Desktop UI | Desktop layout, session handling, compose/drafts, AI/offers panels | Every push | pytest-qt + `desktop/tests/test_main_window.py` |
 | Docs & Release | Manifest integrity, OpenAPI coverage, no TODO | Release gate | infra/release-gate.sh + documentation review |

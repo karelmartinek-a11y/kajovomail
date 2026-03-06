@@ -10,6 +10,10 @@
 - Build the SPA with `cd web && npm run build`; the generated `dist/` folder contains the static bundle that references brand tokens without duplication.
 - Static assets are served by the host web server (Nginx, Caddy), while `/api/v1` and `/api/v1/events/ws` are forwarded to the backend container defined in `infra/docker-compose.prod.yml`. Sessions remain server-only, and `x-csrf-token` headers stay paired with HttpOnly cookies.
 
+## Desktop artifacts
+- Desktop builds live under `desktop/scripts/*` and rely on PyInstaller (`pyinstaller --onefile --windowed --name KajovoMail main.py`). Run the scripts after installing dependencies in `desktop/pyproject.toml`; artifacts appear in `dist/` and connect to the same `mail.hcasc.cz/api/v1` backend.
+- The desktop client keeps mail state in RAM, stores only the session token/CSRF pair in the OS keyring/keychain, and explicitly avoids creating any local mailbox database. Event stream updates refresh the UI via `/api/v1/events/ws`.
+
 ## Reverse proxy for mail.hcasc.cz
 - `mail.hcasc.cz` should point to the node hosting both the static `web/dist` directory and the Compose backend container. Requests to `/` load the SPA and let client-side routing hit `/api/v1` and `/api/v1/events/ws` on the same origin.
 - API endpoints, event stream, and OAuth callbacks (if added later) must be routed to the backend container so credentials never touch clients. Static caching headers should be conservative (short TTL) so new builds roll out quickly.

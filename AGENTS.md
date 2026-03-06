@@ -5,6 +5,7 @@
 - Clients live in parallel roots: `web/` (browser SPA), `desktop/` (native shell), `android/` (mobile UI). Reuse shared assets from `brand/` (logos, palette, tokens) and central docs.
 - `infra/` defines deployment manifests (`docker-compose.dev.yml`, `docker-compose.prod.yml`, `release-gate.sh`), while `.github/workflows/` orchestrates CI/CD. Support scripts such as `scripts/` seed data or diagnostics. Preview API surfaces in `docs/openapi.json` and keep product details in `docs/KajovoMailZadaniFinal.md`.
 - Update `docs/Architecture.md`, `docs/Security.md`, `docs/Deployment.md`, and `docs/TestMatrix.md` whenever architectural or operational decisions change; they summarize the live backend design.
+- `desktop/` now hosts the PySide6/Qt6 client with its session bindings, event stream worker, compose/browse layout, and build scripts; refer to `desktop/README.md` for run/build guidance and the `desktop/scripts/*` helpers for packaging.
 
 ## Build, Test, and Development Commands
 - `docker compose -f infra/docker-compose.dev.yml up --build` boots backend, Postgres, Redis, worker queue, and event stream. Use `docker compose -f infra/docker-compose.dev.yml down --volumes` between runs to reset data.

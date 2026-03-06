@@ -11,3 +11,4 @@
 - Email sync/update workers propagate retries via Celery with idempotency checks (cursor updates, auditing) and honor capability flags.
 - The React web SPA injects the server-provided CSRF token via the SessionProvider, keeps the OpenAI key server-side, and only talks to `/api/v1` + `/api/v1/events/ws` so secrets never surface in client bundle.
 - Release gate script in infra/release-gate.sh rejects deployments that reference TODO/TBD placeholders, violate manifest assets, or expose OpenAI keys to clients.
+- The PySide6 desktop client stores only the CSRF occurrence in the OS keyring, keeps the HttpOnly cookie alive through httpx, and caches mailbox state in-memory widgets; there is no persistent local mailbox database or log of message bodies.
