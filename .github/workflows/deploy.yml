@@ -44,7 +44,7 @@ jobs:
         uses: appleboy/ssh-action@v1.2.0
         env:
           DEPLOY_SHA: ${{ github.sha }}
-          KAJOVOMAIL_LOGIN_EMAIL: ${{ vars.KAJOVOMAIL_LOGIN_EMAIL }}
+          KAJOVOMAIL_LOGIN_EMAIL: ${{ secrets.KAJOVOMAIL_LOGIN_EMAIL }}
           KAJOVOMAIL_LOGIN_PASSWORD: ${{ secrets.KAJOVOMAIL_LOGIN_PASSWORD }}
         with:
           host: ${{ secrets.PROD_HOST }}
