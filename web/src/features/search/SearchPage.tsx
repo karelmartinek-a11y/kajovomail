@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 
 import { FeaturePanel } from '@app/components/FeaturePanel'
 import { StatusMessage } from '@app/components/StatusMessage'
@@ -14,26 +14,26 @@ export const SearchPage = () => {
 
   return (
     <div className="page-container">
-      <FeaturePanel title="Search" lead="AND � OR � NOT � phrase � scope">
+      <FeaturePanel title="Hledání" lead="AND · OR · NOT · fráze · rozsah">
         <form className="form" onSubmit={handleSubmit}>
           <label className="form__field">
-            <span>Search query</span>
+            <span>Vyhledávací dotaz</span>
             <input
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder='"Important" AND (project OR deadline)'
+              placeholder='"Důležité" AND (projekt OR termín)'
             />
           </label>
           <button className="primary-button" type="submit">
-            Run server search
+            Spustit serverové hledání
           </button>
         </form>
         {submitted && (
           <StatusMessage
             variant="empty"
-            title="Results ready"
-            description="Server search combines provider capability and server index."
+            title="Výsledky připraveny"
+            description="Serverové hledání kombinuje schopnosti poskytovatele a serverový index."
           />
         )}
       </FeaturePanel>

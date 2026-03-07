@@ -1,15 +1,14 @@
-
-import { FeaturePanel } from '@app/components/FeaturePanel'
+﻿import { FeaturePanel } from '@app/components/FeaturePanel'
 import { StatusMessage } from '@app/components/StatusMessage'
 
 const accounts = [
-  { provider: 'IMAP (Primary)', email: 'petr@hcasc.cz', capability: 'sync + search' },
-  { provider: 'POP3 (Archive)', email: 'archiv@hcasc.cz', capability: 'download-only' },
+  { provider: 'IMAP (primární)', email: 'petr@hcasc.cz', capability: 'synchronizace + hledání' },
+  { provider: 'POP3 (archiv)', email: 'archiv@hcasc.cz', capability: 'pouze stahování' },
 ]
 
 export const AccountsPage = () => (
   <div className="page-container">
-    <FeaturePanel title="Connected accounts" lead="Multiple providers per user">
+    <FeaturePanel title="Připojené účty" lead="Více poskytovatelů na jednoho uživatele">
       <div className="accounts-grid">
         {accounts.map((account) => (
           <article key={account.email} className="accounts-card">
@@ -17,20 +16,20 @@ export const AccountsPage = () => (
             <p className="accounts-card__email">{account.email}</p>
             <p className="accounts-card__capability">{account.capability}</p>
             <div className="accounts-card__actions">
-              <button type="button">Test connection</button>
+              <button type="button">Otestovat připojení</button>
               <button type="button" className="secondary-button">
-                Manage credentials
+                Spravovat přihlašovací údaje
               </button>
             </div>
           </article>
         ))}
       </div>
     </FeaturePanel>
-    <FeaturePanel title="Capability discovery" lead="Backend registers IMAP/POP3 modes">
+    <FeaturePanel title="Detekce schopností" lead="Backend registruje režimy IMAP/POP3">
       <StatusMessage
         variant="offline"
-        title="Waiting for capability data"
-        description="Sync workers are warming up; the admin configuration will appear when ready."
+        title="Čekám na data schopností"
+        description="Synchronizační workery se inicializují, konfigurace se zobrazí po dokončení." 
       />
     </FeaturePanel>
   </div>

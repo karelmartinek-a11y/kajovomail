@@ -1,14 +1,13 @@
-
-import { FeaturePanel } from '@app/components/FeaturePanel'
+﻿import { FeaturePanel } from '@app/components/FeaturePanel'
 
 const offers = [
-  { thread: '#421', title: 'Offer for automation suite', state: 'draft' },
-  { thread: '#387', title: 'Upgrade to premium', state: 'sent' },
+  { thread: '#421', title: 'Nabídka automatizačního balíčku', state: 'koncept' },
+  { thread: '#387', title: 'Upgrade na premium', state: 'odesláno' },
 ]
 
 export const OffersPage = () => (
   <div className="page-container">
-    <FeaturePanel title="Nab�dky" lead="Mandatory fields � thread linkage � audit">
+    <FeaturePanel title="Nabídky" lead="Povinná pole · navázání na vlákno · audit">
       <ul className="offers-list">
         {offers.map((offer) => (
           <li key={offer.thread} className="offers-list__item">

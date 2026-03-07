@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 
 import { FeaturePanel } from '@app/components/FeaturePanel'
 import { StatusMessage } from '@app/components/StatusMessage'
@@ -27,7 +27,7 @@ export const LoginPage = () => {
     event.preventDefault()
     setError(null)
     if (hasErrors) {
-      setError({ message: 'Email and password are required.' })
+      setError({ message: 'E-mail i heslo jsou povinné.' })
       return
     }
 
@@ -43,10 +43,10 @@ export const LoginPage = () => {
 
   return (
     <div className="page-container">
-      <FeaturePanel title="Secure login" lead="Server-managed sessions with HttpOnly cookies">
+      <FeaturePanel title="Bezpečné přihlášení" lead="Serverem řízené relace s HttpOnly cookies">
         <form className="form" onSubmit={handleSubmit}>
           <label className="form__field">
-            <span>Email</span>
+            <span>E-mail</span>
             <input
               type="email"
               name="email"
@@ -57,7 +57,7 @@ export const LoginPage = () => {
             />
           </label>
           <label className="form__field">
-            <span>Password</span>
+            <span>Heslo</span>
             <input
               type="password"
               name="password"
@@ -74,19 +74,19 @@ export const LoginPage = () => {
               checked={form.remember}
               onChange={(event) => setForm({ ...form, remember: event.target.checked })}
             />
-            <span>Keep me signed in</span>
+            <span>Zůstat přihlášen</span>
           </label>
           <button type="submit" className="primary-button" disabled={pending}>
-            {pending ? 'Signing in�' : 'Sign in'}
+            {pending ? 'Přihlašuji…' : 'Přihlásit'}
           </button>
         </form>
         {status === 'loading' && (
-          <StatusMessage variant="loading" title="Checking session" description="CSRF token is being retrieved from the server." />
+          <StatusMessage variant="loading" title="Kontrola relace" description="Načítám CSRF token ze serveru." />
         )}
         {status === 'authenticated' && (
-          <StatusMessage variant="empty" title="Session ready" description="HttpOnly session cookie is active." />
+          <StatusMessage variant="empty" title="Relace připravena" description="HttpOnly cookie relace je aktivní." />
         )}
-        {error && <StatusMessage variant="error" title="Login issue" description={error.message} />}
+        {error && <StatusMessage variant="error" title="Problém s přihlášením" description={error.message} />}
       </FeaturePanel>
     </div>
   )

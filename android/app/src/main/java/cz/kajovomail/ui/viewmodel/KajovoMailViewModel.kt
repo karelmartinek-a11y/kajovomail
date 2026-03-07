@@ -1,4 +1,4 @@
-package cz.kajovomail.ui.viewmodel
+﻿package cz.kajovomail.ui.viewmodel
 
 import android.app.Application
 import androidx.compose.runtime.getValue
@@ -7,7 +7,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import cz.kajovomail.data.*
+import cz.kajovomail.data.ApiRepository
+import cz.kajovomail.data.ComposeState
+import cz.kajovomail.data.MailAccount
+import cz.kajovomail.data.MailMessage
+import cz.kajovomail.data.OfferItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,7 +37,7 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
     var aiResponseStyle by mutableStateOf("balanced")
     var aiSelectedModel by mutableStateOf("")
     val aiModels = mutableStateListOf<String>()
-    var aiSettingsStatus by mutableStateOf("AI settings not loaded.")
+    var aiSettingsStatus by mutableStateOf("AI nastavení zatím nebylo načteno.")
     private var _selectedMessage: MailMessage? = null
     val selectedMessage get() = _selectedMessage
 
@@ -47,8 +51,27 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
 
     fun login(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            repository.login(loginState.value.email, loginState.value.password)
-            onSuccess()
+            try {
+                repository.login(loginState.value.email, loginState.value.password)
+                loadAccounts()
+                loadOffers()
+                onSuccess()
+            } catch (e: Exception) {
+                aiSettingsStatus = e.message ?: "Přihlášení selhalo."
+            }
+        }
+    }
+
+    private fun loadAccounts() {
+        viewModelScope.launch {
+            _accounts.value = repository.fetchAccounts()
+        }
+    }
+
+    private fun loadOffers() {
+        viewModelScope.launch {
+            offers.clear()
+            offers.addAll(repository.fetchOffers())
         }
     }
 
@@ -72,7 +95,15 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun logout() {}
+    fun logout() {
+        loginState.value = LoginForm()
+        composeState = ComposeState()
+        _accounts.value = emptyList()
+        _messages.value = emptyList()
+        offers.clear()
+        aiPrompt = ""
+        aiResponse = ""
+    }
 
     fun loadAISettings() {
         viewModelScope.launch {
@@ -82,12 +113,12 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
                 aiResponseStyle = settings.responseStyle
                 aiSelectedModel = settings.model
                 aiSettingsStatus = if (settings.hasOpenAIApiKey) {
-                    "Stored key: ${settings.openAIApiKeyMasked}"
+                    "Uložený klíč: ${settings.openAIApiKeyMasked}"
                 } else {
-                    "No API key configured."
+                    "API klíč zatím není nastaven."
                 }
             } catch (e: Exception) {
-                aiSettingsStatus = e.message ?: "Failed to load AI settings."
+                aiSettingsStatus = e.message ?: "Načtení AI nastavení selhalo."
             }
         }
     }
@@ -101,9 +132,9 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
             )
             aiSettingsStatus = if (ok) {
                 aiApiKey = ""
-                "AI settings saved."
+                "AI nastavení bylo uloženo."
             } else {
-                "Failed to save AI settings."
+                "Uložení AI nastavení selhalo."
             }
         }
     }
@@ -119,7 +150,7 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
                     aiSelectedModel = models.first()
                 }
             } catch (e: Exception) {
-                aiSettingsStatus = e.message ?: "API key test failed."
+                aiSettingsStatus = e.message ?: "Test API klíče selhal."
             }
         }
     }
@@ -133,9 +164,9 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
                 if (aiSelectedModel.isBlank() && models.isNotEmpty()) {
                     aiSelectedModel = models.first()
                 }
-                aiSettingsStatus = "Loaded ${models.size} models."
+                aiSettingsStatus = "Načteno modelů: ${models.size}."
             } catch (e: Exception) {
-                aiSettingsStatus = e.message ?: "Failed to load models."
+                aiSettingsStatus = e.message ?: "Načtení modelů selhalo."
             }
         }
     }

@@ -1,26 +1,25 @@
-
-import { FeaturePanel } from '@app/components/FeaturePanel'
+﻿import { FeaturePanel } from '@app/components/FeaturePanel'
 
 export const MessageDetailPage = () => (
   <div className="page-container">
-    <FeaturePanel title="Message detail" lead="Threading � flags � move � copy">
+    <FeaturePanel title="Detail zprávy" lead="Vlákna · příznaky · přesun · kopie">
       <article className="message-detail">
         <header>
-          <p className="message-detail__subject">Server orchestration update</p>
-          <p className="message-detail__meta">from orchestration@hcasc.cz � thread #312</p>
+          <p className="message-detail__subject">Aktualizace orchestrátoru serveru</p>
+          <p className="message-detail__meta">od orchestration@hcasc.cz · vlákno #312</p>
         </header>
         <section>
           <p>
-            This is a placeholder for threading data parsed from RFC headers, showing flag, archive, and move
-            operations. Use the event stream to refresh status on the fly.
+            Toto je zástupný text pro data vláken parsovaná z RFC hlaviček včetně příznaků,
+            archivace a přesunu zpráv. Pro živou aktualizaci používejte event stream.
           </p>
         </section>
         <div className="message-detail__actions">
-          <button type="button">Mark read</button>
+          <button type="button">Označit jako přečtené</button>
           <button type="button" className="secondary-button">
-            Flag
+            Připnout příznak
           </button>
-          <button type="button">Move</button>
+          <button type="button">Přesunout</button>
         </div>
       </article>
     </FeaturePanel>

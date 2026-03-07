@@ -19,6 +19,7 @@ body {
 
 #root {
   min-height: 100vh;
+  padding-bottom: 5rem;
 }
 
 .core-layout {
@@ -43,6 +44,24 @@ body {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+}
+
+.brand-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.brand-compact__signace {
+  width: 28px;
+  height: 96px;
+  object-fit: contain;
+}
+
+.brand-compact__mark {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
 }
 
 .brand-mark__image {
@@ -425,6 +444,40 @@ body {
   box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.15);
 }
 
+.standalone-layout__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.floating-signace {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  width: 24px;
+  height: 84px;
+  object-fit: contain;
+  z-index: var(--brand-tokens-zIndex-signace, 1100);
+  pointer-events: none;
+}
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.intro-overlay__logo {
+  width: min(72vw, 520px);
+  max-height: 60vh;
+  object-fit: contain;
+}
+
 @media (max-width: 1023px) {
   .core-layout__shell {
     grid-template-columns: 1fr;
@@ -448,6 +501,21 @@ body {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+
+  .floating-signace {
+    left: 0.6rem;
+    bottom: 0.6rem;
+  }
+
+  .brand-compact__signace {
+    width: 24px;
+    height: 78px;
+  }
+
+  .brand-compact__mark {
+    width: 30px;
+    height: 30px;
   }
 }
 

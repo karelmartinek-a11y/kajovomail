@@ -1,12 +1,12 @@
-import clsx from 'clsx'
+﻿import clsx from 'clsx'
 
 export type StatusMessageVariant = 'loading' | 'empty' | 'error' | 'offline'
 
 const icons: Record<StatusMessageVariant, string> = {
-  loading: '?',
-  empty: '??',
-  error: '??',
-  offline: '??',
+  loading: 'i',
+  empty: 'o',
+  error: 'x',
+  offline: '!',
 }
 
 interface StatusMessageProps {

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import threading
+from pathlib import Path
 from typing import Dict, List
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtGui import QAction, QKeySequence, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -36,7 +38,9 @@ class KajovoMailMainWindow(QMainWindow):
         super().__init__()
         self.api_client = api_client
         self.session_manager = session_manager
-        self.setWindowTitle("KajovoMail Desktop")
+        self._assets_dir = Path(__file__).resolve().parents[1] / 'assets'
+        self._floating_signace: QLabel | None = None
+        self.setWindowTitle("KajovoMail Desktop klient")
         self.setMinimumSize(1200, 800)
         self._accounts: List[Account] = []
         self._messages: Dict[str, Message] = {}
@@ -49,21 +53,39 @@ class KajovoMailMainWindow(QMainWindow):
         QTimer.singleShot(100, self._run_login)
 
     def _setup_ui(self) -> None:
-        toolbar = QToolBar("Main toolbar")
+        toolbar = QToolBar("Hlavní panel")
         toolbar.setMovable(False)
-        refresh_action = QAction("Refresh", self)
+        brand_widget = QWidget()
+        brand_layout = QHBoxLayout()
+        brand_layout.setContentsMargins(0, 0, 12, 0)
+        brand_layout.setSpacing(6)
+        brand_signace = QLabel()
+        brand_mark = QLabel()
+        signace = QPixmap(str(self._assets_dir / 'kajovo_signace.png'))
+        mark = QPixmap(str(self._assets_dir / 'kajovo_mark.png'))
+        if not signace.isNull():
+            brand_signace.setPixmap(signace.scaled(18, 62, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        if not mark.isNull():
+            brand_mark.setPixmap(mark.scaled(28, 28, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        brand_layout.addWidget(brand_signace)
+        brand_layout.addWidget(brand_mark)
+        brand_layout.addWidget(QLabel("KajovoMail"))
+        brand_widget.setLayout(brand_layout)
+        toolbar.addWidget(brand_widget)
+
+        refresh_action = QAction("Obnovit", self)
         refresh_action.setShortcut(QKeySequence("F5"))
         refresh_action.triggered.connect(self._refresh_accounts)
         toolbar.addAction(refresh_action)
-        compose_action = QAction("Compose", self)
+        compose_action = QAction("Napsat", self)
         compose_action.setShortcut(QKeySequence("Ctrl+N"))
         compose_action.triggered.connect(lambda: self.reading_pane.setFocus())
         toolbar.addAction(compose_action)
-        search_action = QAction("Search", self)
+        search_action = QAction("Hledat", self)
         search_action.setShortcut(QKeySequence("Ctrl+F"))
-        search_action.triggered.connect(lambda: self.reader_status("Search panel ready."))
+        search_action.triggered.connect(lambda: self.reader_status("Panel hledání je připraven."))
         toolbar.addAction(search_action)
-        logout_action = QAction("Logout", self)
+        logout_action = QAction("Odhlásit", self)
         logout_action.setShortcut(QKeySequence("Ctrl+Shift+Q"))
         logout_action.triggered.connect(self._logout)
         toolbar.addAction(logout_action)
@@ -73,7 +95,7 @@ class KajovoMailMainWindow(QMainWindow):
         left_panel = QWidget()
         left_layout = QVBoxLayout()
         left_panel.setLayout(left_layout)
-        left_layout.addWidget(QLabel("Accounts & folders"))
+        left_layout.addWidget(QLabel("Účty a složky"))
         self.account_list = QListWidget()
         self.account_list.currentItemChanged.connect(self._on_account_selected)
         left_layout.addWidget(self.account_list)
@@ -101,13 +123,13 @@ class KajovoMailMainWindow(QMainWindow):
         compose_layout = QVBoxLayout()
         compose_widget.setLayout(compose_layout)
         self.compose_recipient = QLineEdit()
-        self.compose_recipient.setPlaceholderText("recipient@provider")
+        self.compose_recipient.setPlaceholderText("prijemce@poskytovatel")
         self.compose_subject = QLineEdit()
-        self.compose_subject.setPlaceholderText("Subject")
+        self.compose_subject.setPlaceholderText("Předmět")
         self.compose_body = QTextEdit()
-        send_button = QPushButton("Send multipart draft")
+        send_button = QPushButton("Odeslat multipart koncept")
         send_button.clicked.connect(self._send_compose)
-        compose_layout.addWidget(QLabel("Compose"))
+        compose_layout.addWidget(QLabel("Napsat zprávu"))
         compose_layout.addWidget(self.compose_recipient)
         compose_layout.addWidget(self.compose_subject)
         compose_layout.addWidget(self.compose_body)
@@ -122,32 +144,32 @@ class KajovoMailMainWindow(QMainWindow):
         self.ai_prompt = QTextEdit()
         ai_layout.addWidget(QLabel("AI prompt"))
         ai_layout.addWidget(self.ai_prompt)
-        ai_run = QPushButton("Run AI orchestration")
+        ai_run = QPushButton("Spustit AI orchestraci")
         ai_run.clicked.connect(self._run_ai)
         ai_layout.addWidget(ai_run)
         self.ai_output = QTextEdit()
         self.ai_output.setReadOnly(True)
         ai_layout.addWidget(self.ai_output)
-        ai_offers_panel.addTab(ai_panel, "AI console")
+        ai_offers_panel.addTab(ai_panel, "AI panel")
 
         offers_panel = QWidget()
         offers_layout = QVBoxLayout()
         offers_panel.setLayout(offers_layout)
         self.offer_list = QListWidget()
         self.offer_list.setSelectionMode(QListWidget.SingleSelection)
-        offers_layout.addWidget(QLabel("Offers"))
+        offers_layout.addWidget(QLabel("Nabídky"))
         offers_layout.addWidget(self.offer_list)
-        ai_offers_panel.addTab(offers_panel, "Offers")
+        ai_offers_panel.addTab(offers_panel, "Nabídky")
 
         settings_panel = QWidget()
         settings_layout = QVBoxLayout()
         settings_panel.setLayout(settings_layout)
-        settings_layout.addWidget(QLabel("OpenAI API key"))
+        settings_layout.addWidget(QLabel("OpenAI API klíč"))
         self.ai_api_key = QLineEdit()
         self.ai_api_key.setPlaceholderText("sk-...")
         self.ai_api_key.setEchoMode(QLineEdit.Password)
         settings_layout.addWidget(self.ai_api_key)
-        settings_layout.addWidget(QLabel("Response style"))
+        settings_layout.addWidget(QLabel("Styl odpovědi"))
         self.ai_style = QComboBox()
         self.ai_style.addItems(["concise", "balanced", "detailed"])
         settings_layout.addWidget(self.ai_style)
@@ -155,29 +177,37 @@ class KajovoMailMainWindow(QMainWindow):
         self.ai_model = QComboBox()
         self.ai_model.setEditable(True)
         settings_layout.addWidget(self.ai_model)
-        test_key_button = QPushButton("Test API key")
+        test_key_button = QPushButton("Otestovat API klíč")
         test_key_button.clicked.connect(self._test_ai_key)
         settings_layout.addWidget(test_key_button)
-        load_models_button = QPushButton("Load models")
+        load_models_button = QPushButton("Načíst modely")
         load_models_button.clicked.connect(self._load_ai_models)
         settings_layout.addWidget(load_models_button)
-        save_settings_button = QPushButton("Save AI settings")
+        save_settings_button = QPushButton("Uložit AI nastavení")
         save_settings_button.clicked.connect(self._save_ai_settings)
         settings_layout.addWidget(save_settings_button)
-        ai_offers_panel.addTab(settings_panel, "Settings")
+        ai_offers_panel.addTab(settings_panel, "Nastavení")
 
         central_split.addWidget(ai_offers_panel)
         central_split.setStretchFactor(1, 2)
         central_split.setStretchFactor(2, 3)
         self.setCentralWidget(central_split)
 
-        self.status_label = QLabel("Awaiting backend connection...")
+        self.status_label = QLabel("Čekám na připojení backendu...")
         self.statusBar().addWidget(self.status_label)
+
+        self._floating_signace = QLabel(self)
+        floating = QPixmap(str(self._assets_dir / 'kajovo_signace.png'))
+        if not floating.isNull():
+            self._floating_signace.setPixmap(floating.scaled(18, 66, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self._floating_signace.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self._floating_signace.show()
+        self._reposition_floating_signace()
 
     def _run_login(self) -> None:
         dialog = LoginDialog(self.api_client, self.session_manager)
         if dialog.exec() == LoginDialog.Accepted:
-            self.reader_status("Authenticated as " + (self.session_manager.current_user() or "unknown"))
+            self.reader_status("Přihlášen jako " + (self.session_manager.current_user() or "neznámý uživatel"))
             self._refresh_accounts()
             self._refresh_offers()
             self._load_ai_settings()
@@ -229,7 +259,7 @@ class KajovoMailMainWindow(QMainWindow):
         folder_id = item.data(0, Qt.UserRole)
         if folder_id:
             self._current_folder_id = folder_id
-            self.reader_status(f"Fetching {item.text(0)}...")
+            self.reader_status(f"Načítám složku {item.text(0)}...")
             self._load_messages(folder_id)
 
     def _load_messages(self, folder_id: str) -> None:
@@ -258,7 +288,7 @@ class KajovoMailMainWindow(QMainWindow):
             message = self._messages.get(message_id)
             if message:
                 self.reading_pane.setPlainText(
-                    f"From: {message.sender}\nSubject: {message.subject}\n\n{message.snippet}"
+                    f"Od: {message.sender}\nPředmět: {message.subject}\n\n{message.snippet}"
                 )
         else:
             self.reading_pane.clear()
@@ -276,7 +306,7 @@ class KajovoMailMainWindow(QMainWindow):
         def task() -> None:
             try:
                 self.api_client.compose(draft)
-                QTimer.singleShot(0, lambda: self.reader_status("Draft sent for multipart dispatch."))
+                QTimer.singleShot(0, lambda: self.reader_status("Koncept byl zařazen k multipart odeslání."))
             except ApiError as exc:
                 QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
 
@@ -290,7 +320,7 @@ class KajovoMailMainWindow(QMainWindow):
     def _run_ai(self) -> None:
         prompt = self.ai_prompt.toPlainText().strip()
         if not prompt:
-            self.reader_status("AI prompt cannot be empty.")
+            self.reader_status("AI prompt nesmí být prázdný.")
             return
 
         def task() -> None:
@@ -299,7 +329,7 @@ class KajovoMailMainWindow(QMainWindow):
                 QTimer.singleShot(
                     0,
                     lambda: self.ai_output.setPlainText(
-                        f"Summary:\n{response.summary}\n\nHTML preview:\n{response.html_preview}\n\nPolicy: {response.policy}"
+                        f"Souhrn:\n{response.summary}\n\nHTML náhled:\n{response.html_preview}\n\nPolitika: {response.policy}"
                     ),
                 )
             except ApiError as exc:
@@ -330,7 +360,7 @@ class KajovoMailMainWindow(QMainWindow):
         masked = payload.get("openai_api_key_masked")
         if masked:
             self.ai_api_key.setPlaceholderText(str(masked))
-        self.reader_status("AI settings loaded.")
+        self.reader_status("AI nastavení načteno.")
 
     def _test_ai_key(self) -> None:
         key = self.ai_api_key.text().strip() or None
@@ -340,7 +370,7 @@ class KajovoMailMainWindow(QMainWindow):
                 payload = self.api_client.test_openai_key(key)
                 models = payload.get("models", [])
                 QTimer.singleShot(0, lambda: self._apply_model_list(models))
-                QTimer.singleShot(0, lambda: self.reader_status(str(payload.get("message", "Key test done"))))
+                QTimer.singleShot(0, lambda: self.reader_status(str(payload.get("message", "Test klíče dokončen"))))
             except ApiError as exc:
                 QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
 
@@ -351,7 +381,7 @@ class KajovoMailMainWindow(QMainWindow):
             try:
                 models = self.api_client.list_openai_models()
                 QTimer.singleShot(0, lambda: self._apply_model_list(models))
-                QTimer.singleShot(0, lambda: self.reader_status(f"Loaded {len(models)} OpenAI models."))
+                QTimer.singleShot(0, lambda: self.reader_status(f"Načteno OpenAI modelů: {len(models)}."))
             except ApiError as exc:
                 QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
 
@@ -380,7 +410,7 @@ class KajovoMailMainWindow(QMainWindow):
                     model=model if model else None,
                 )
                 QTimer.singleShot(0, lambda: self.ai_api_key.clear())
-                QTimer.singleShot(0, lambda: self.reader_status("AI settings saved."))
+                QTimer.singleShot(0, lambda: self.reader_status("AI nastavení uloženo."))
             except ApiError as exc:
                 QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
 
@@ -408,13 +438,13 @@ class KajovoMailMainWindow(QMainWindow):
         headers = self.api_client.cookie_header()
         self._event_worker = EventStreamWorker(self.api_client.base_url, headers or None)
         self._event_worker.event_received.connect(self._handle_event)
-        self._event_worker.error.connect(lambda exc: self.reader_status("Event stream interrupted: " + str(exc)))
+        self._event_worker.error.connect(lambda exc: self.reader_status("Event stream přerušen: " + str(exc)))
         self._event_worker.start()
 
     def _handle_event(self, raw_event: str) -> None:
         try:
             data = json.loads(raw_event)
-            self.reader_status(f"Event: {data.get('type', 'update')}")
+            self.reader_status(f"Událost: {data.get('type', 'update')}")
             if data.get("type") in ("folder.sync", "message.update") and self._current_folder_id:
                 self._load_messages(self._current_folder_id)
         except json.JSONDecodeError:
@@ -443,9 +473,21 @@ class KajovoMailMainWindow(QMainWindow):
         if not folder_id:
             return
         selected = [item.data(Qt.UserRole) for item in self.message_list.selectedItems()]
-        action = "copy" if event.keyboardModifiers() & Qt.ControlModifier else "move"
-        self.reader_status(f"{action.title()} {len(selected)} message(s) into {target.text(0)}")
+        action = "kopíruji" if event.keyboardModifiers() & Qt.ControlModifier else "přesouvám"
+        self.reader_status(f"{action} {len(selected)} zpráv do {target.text(0)}")
         event.acceptProposedAction()
 
     def reader_status(self, message: str) -> None:
         self.status_label.setText(message)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._reposition_floating_signace()
+
+    def _reposition_floating_signace(self) -> None:
+        if not self._floating_signace:
+            return
+        margin = 10
+        size = self._floating_signace.sizeHint()
+        self._floating_signace.move(margin, self.height() - size.height() - margin - 24)
+        self._floating_signace.raise_()

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 
 import { FeaturePanel } from '@app/components/FeaturePanel'
 import { StatusMessage } from '@app/components/StatusMessage'
@@ -21,36 +21,36 @@ export const ComposePage = () => {
 
   return (
     <div className="page-container">
-      <FeaturePanel title="Compose" lead="Drafts � Reply � Forward in multipart alternatives">
+      <FeaturePanel title="Napsat zprávu" lead="Koncepty · Odpověď · Přeposlání v multipart variantách">
         <form className="form" onSubmit={handleSubmit}>
           <label className="form__field">
-            <span>To</span>
-            <input value={fields.to} onChange={handleChange('to')} placeholder="recipient@provider" required />
+            <span>Komu</span>
+            <input value={fields.to} onChange={handleChange('to')} placeholder="prijemce@poskytovatel" required />
           </label>
           <label className="form__field">
-            <span>Subject</span>
-            <input value={fields.subject} onChange={handleChange('subject')} placeholder="Subject" required />
+            <span>Předmět</span>
+            <input value={fields.subject} onChange={handleChange('subject')} placeholder="Předmět" required />
           </label>
           <label className="form__field">
-            <span>Plain text</span>
-            <textarea value={fields.body} onChange={handleChange('body')} rows={4} placeholder="Write the plain text..." />
+            <span>Prostý text</span>
+            <textarea value={fields.body} onChange={handleChange('body')} rows={4} placeholder="Napište text zprávy..." />
           </label>
-          <div className="form__helper">Multi-part order: text/plain � text/html (generated)</div>
+          <div className="form__helper">Pořadí multipart: text/plain · text/html (generováno)</div>
           <div className="form__actions">
             <button className="primary-button" type="submit">
-              Send
+              Odeslat
             </button>
             <button type="button" className="secondary-button">
-              Save draft
+              Uložit koncept
             </button>
-            <span className="form__autosave">{draftSaved ? 'Autosaved' : 'Draft pending'}</span>
+            <span className="form__autosave">{draftSaved ? 'Uloženo automaticky' : 'Koncept čeká na uložení'}</span>
           </div>
         </form>
         {submitted && (
           <StatusMessage
             variant="empty"
-            title="Message queued"
-            description="The backend will handle idempotent multipart dispatch."
+            title="Zpráva zařazena do fronty"
+            description="Backend zajistí idempotentní multipart doručení."
           />
         )}
       </FeaturePanel>

@@ -15,7 +15,7 @@ export const SettingsPage = () => {
   const [style, setStyle] = useState<'concise' | 'balanced' | 'detailed'>('balanced')
   const [selectedModel, setSelectedModel] = useState('')
   const [models, setModels] = useState<string[]>([])
-  const [status, setStatus] = useState<string>('Loading settings...')
+  const [status, setStatus] = useState<string>('Načítám nastavení...')
 
   useEffect(() => {
     const load = async () => {
@@ -25,8 +25,8 @@ export const SettingsPage = () => {
         setSelectedModel(settings.model ?? '')
         setStatus(
           settings.has_openai_api_key
-            ? `Stored API key: ${settings.openai_api_key_masked ?? 'hidden'}`
-            : 'No API key configured'
+            ? `Uložený API klíč: ${settings.openai_api_key_masked ?? 'skrytý'}`
+            : 'API klíč zatím není nastaven'
         )
       } catch (error) {
         setStatus(unwrapApiError(error).message)
@@ -44,7 +44,7 @@ export const SettingsPage = () => {
         model: selectedModel || undefined,
       })
       setApiKey('')
-      setStatus('AI settings saved.')
+      setStatus('AI nastavení bylo uloženo.')
     } catch (error) {
       setStatus(unwrapApiError(error).message)
     }
@@ -72,7 +72,7 @@ export const SettingsPage = () => {
       if (loaded.length > 0 && !selectedModel) {
         setSelectedModel(loaded[0])
       }
-      setStatus(`Loaded ${loaded.length} models.`)
+      setStatus(`Načteno modelů: ${loaded.length}.`)
     } catch (error) {
       setStatus(unwrapApiError(error).message)
     }
@@ -80,10 +80,10 @@ export const SettingsPage = () => {
 
   return (
     <div className="page-container">
-      <FeaturePanel title="AI configuration" lead="OpenAI key, model discovery, response style">
+      <FeaturePanel title="AI konfigurace" lead="OpenAI klíč, načtení modelů, styl odpovědi">
         <form className="form" onSubmit={handleSave}>
           <label className="form__field">
-            <span>OpenAI API key</span>
+            <span>OpenAI API klíč</span>
             <input
               type="password"
               value={apiKey}
@@ -92,20 +92,20 @@ export const SettingsPage = () => {
             />
           </label>
           <label className="form__field">
-            <span>Response style</span>
+            <span>Styl odpovědi</span>
             <select
               value={style}
               onChange={(event) => setStyle(event.target.value as 'concise' | 'balanced' | 'detailed')}
             >
-              <option value="concise">Concise</option>
-              <option value="balanced">Balanced</option>
-              <option value="detailed">Detailed</option>
+              <option value="concise">Stručný</option>
+              <option value="balanced">Vyvážený</option>
+              <option value="detailed">Detailní</option>
             </select>
           </label>
           <label className="form__field">
             <span>OpenAI model</span>
             <select value={selectedModel} onChange={(event) => setSelectedModel(event.target.value)}>
-              <option value="">Select model</option>
+              <option value="">Vyberte model</option>
               {models.map((model) => (
                 <option key={model} value={model}>
                   {model}
@@ -115,17 +115,17 @@ export const SettingsPage = () => {
           </label>
           <div className="form__actions">
             <button type="button" className="secondary-button" onClick={handleTestKey}>
-              Test API key
+              Otestovat API klíč
             </button>
             <button type="button" className="secondary-button" onClick={handleLoadModels}>
-              Load models
+              Načíst modely
             </button>
             <button type="submit" className="primary-button">
-              Save settings
+              Uložit nastavení
             </button>
           </div>
         </form>
-        <StatusMessage variant="empty" title="AI settings status" description={status} />
+        <StatusMessage variant="empty" title="Stav AI nastavení" description={status} />
       </FeaturePanel>
     </div>
   )

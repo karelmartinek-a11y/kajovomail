@@ -45,7 +45,7 @@ class ApiRepository(private val context: Context) {
             .post(payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType()))
             .build()
         val response = client.newCall(request).execute()
-        if (!response.isSuccessful) throw Exception("Failed to login")
+        if (!response.isSuccessful) throw Exception("Přihlášení selhalo")
         val payload = JSONObject(response.body?.string().orEmpty())
         val setCookie = response.header("Set-Cookie").orEmpty()
         val sessionPair = setCookie.split(";").firstOrNull { it.contains("kajovo_session=") } ?: ""
@@ -95,7 +95,7 @@ class ApiRepository(private val context: Context) {
     suspend fun fetchAISettings(): AISettings = withContext(Dispatchers.IO) {
         val request = authRequest("$baseUrl/settings/ai").build()
         val response = client.newCall(request).execute()
-        if (!response.isSuccessful) throw Exception("Failed to load AI settings")
+        if (!response.isSuccessful) throw Exception("Načtení AI nastavení selhalo")
         val payload = JSONObject(response.body?.string().orEmpty())
         AISettings(
             hasOpenAIApiKey = payload.optBoolean("has_openai_api_key"),
@@ -128,7 +128,7 @@ class ApiRepository(private val context: Context) {
             .build()
         val response = client.newCall(request).execute()
         val body = JSONObject(response.body?.string().orEmpty())
-        val message = body.optString("message", "Key test failed")
+        val message = body.optString("message", "Test API klíče selhal")
         val modelsJson = body.optJSONArray("models") ?: JSONArray()
         val models = mutableListOf<String>()
         for (i in 0 until modelsJson.length()) {
@@ -140,7 +140,7 @@ class ApiRepository(private val context: Context) {
     suspend fun loadAIModels(): List<String> = withContext(Dispatchers.IO) {
         val request = authRequest("$baseUrl/settings/ai/models").build()
         val response = client.newCall(request).execute()
-        if (!response.isSuccessful) throw Exception("Failed to load models")
+        if (!response.isSuccessful) throw Exception("Načtení modelů selhalo")
         val payload = JSONObject(response.body?.string().orEmpty())
         val modelsJson = payload.optJSONArray("models") ?: JSONArray()
         val models = mutableListOf<String>()
@@ -152,9 +152,9 @@ class ApiRepository(private val context: Context) {
 
     suspend fun requestAI(prompt: String): AIResponse = withContext(Dispatchers.IO) {
         AIResponse(
-            summary = "AI summary placeholder",
-            htmlPreview = "<p>Preview</p>",
-            policy = "store: false"
+            summary = "Zástupný AI souhrn",
+            htmlPreview = "<p>Náhled</p>",
+            policy = "ukládání: ne"
         )
     }
 }

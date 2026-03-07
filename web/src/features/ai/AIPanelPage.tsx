@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 
 import { FeaturePanel } from '@app/components/FeaturePanel'
 import { StatusMessage } from '@app/components/StatusMessage'
 
 const initial = {
-  prompt: 'Summarize new offers',
-  status: 'store: false',
+  prompt: 'Shrň nové nabídky',
+  status: 'ukládání: ne',
 }
 
 export const AIPanelPage = () => {
@@ -19,22 +19,22 @@ export const AIPanelPage = () => {
 
   return (
     <div className="page-container">
-      <FeaturePanel title="AI orchestration" lead="Structured output � privacy audit">
+      <FeaturePanel title="AI orchestrace" lead="Strukturovaný výstup · audit soukromí">
         <form className="form" onSubmit={handleSubmit}>
           <label className="form__field">
             <span>Prompt</span>
             <input value={prompt} onChange={(event) => setPrompt(event.target.value)} />
           </label>
-          <div className="form__helper">Default response policy: {initial.status}</div>
+          <div className="form__helper">Výchozí politika odpovědi: {initial.status}</div>
           <button type="submit" className="primary-button">
-            Run orchestration
+            Spustit orchestraci
           </button>
         </form>
         {submitted && (
           <StatusMessage
             variant="empty"
-            title="Structured response available"
-            description="Plain text, HTML preview, and metadata generated from the schema."
+            title="Strukturovaná odpověď je připravená"
+            description="Ze schématu vznikl prostý text, HTML náhled i metadata."
           />
         )}
       </FeaturePanel>
