@@ -96,7 +96,7 @@ jobs:
             done
             nginx_dump="$(sudo nginx -T 2>/dev/null || nginx -T 2>/dev/null || true)"
             if [ -n "$nginx_dump" ]; then
-              while IFS= read -r web_root; do
+              for web_root in $(printf '%s\n' "$nginx_dump" | awk '/^[[:space:]]*root[[:space:]]+/ {print $2}' | tr -d ';' | sort -u); do
                 if [ -n "$web_root" ] && [ -d "$web_root" ]; then
                   echo "Syncing uploaded dist into nginx root: $web_root"
                   if command -v sudo >/dev/null 2>&1; then
@@ -106,9 +106,7 @@ jobs:
                   fi
                   synced_roots=$((synced_roots + 1))
                 fi
-              done <<EOF
-$(printf '%s\n' "$nginx_dump" | awk '/^[[:space:]]*root[[:space:]]+/ {print $2}' | tr -d ';' | sort -u)
-EOF
+              done
             fi
             if [ "$synced_roots" -eq 0 ]; then
               echo "No known web root directory exists on server."
