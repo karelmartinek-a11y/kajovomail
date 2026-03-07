@@ -73,26 +73,28 @@ jobs:
             docker exec "$db_container" psql -U kajovo -d kajovo -v ON_ERROR_STOP=1 -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS openai_api_key TEXT;"
             docker exec "$db_container" psql -U kajovo -d kajovo -v ON_ERROR_STOP=1 -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_response_style VARCHAR(32) NOT NULL DEFAULT 'balanced';"
             docker exec "$db_container" psql -U kajovo -d kajovo -v ON_ERROR_STOP=1 -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS openai_model VARCHAR(64);"
-            has_key="$(docker exec "$db_container" psql -U kajovo -d kajovo -tAc "SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='openai_api_key' LIMIT 1;" | tr -d '[:space:]')"
-            has_style="$(docker exec "$db_container" psql -U kajovo -d kajovo -tAc "SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='ai_response_style' LIMIT 1;" | tr -d '[:space:]')"
-            has_model="$(docker exec "$db_container" psql -U kajovo -d kajovo -tAc "SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='openai_model' LIMIT 1;" | tr -d '[:space:]')"
-            if [ "$has_key" != "1" ] || [ "$has_style" != "1" ] || [ "$has_model" != "1" ]; then
-              echo "User AI settings columns verification failed."
+            if [ -d /tmp/kajovomail-web-dist/web/dist ]; then
+              uploaded_dist="/tmp/kajovomail-web-dist/web/dist"
+            elif [ -f /tmp/kajovomail-web-dist/index.html ]; then
+              uploaded_dist="/tmp/kajovomail-web-dist"
+            else
+              echo "Uploaded web dist was not found on server."
               exit 1
             fi
+            echo "Using uploaded dist: $uploaded_dist"
             site_conf="$(grep -Rsl 'server_name[[:space:]]\\+mail\\.hcasc\\.cz' /etc/nginx/sites-enabled /etc/nginx/sites-available 2>/dev/null | head -n 1 || true)"
             if [ -n "$site_conf" ]; then
               echo "Detected nginx site config: $site_conf"
               web_root="$(awk '/^[[:space:]]*root[[:space:]]+/ {print $2}' "$site_conf" | tr -d ';' | head -n 1 || true)"
               echo "Detected web root: $web_root"
-              if [ -n "$web_root" ] && [ -d "$web_root" ] && [ -d /tmp/kajovomail-web-dist/web/dist ]; then
+              if [ -n "$web_root" ] && [ -d "$web_root" ]; then
                 if command -v sudo >/dev/null 2>&1; then
-                  sudo cp -a /tmp/kajovomail-web-dist/web/dist/. "$web_root"/ || cp -a /tmp/kajovomail-web-dist/web/dist/. "$web_root"/
+                  sudo cp -a "$uploaded_dist"/. "$web_root"/ || cp -a "$uploaded_dist"/. "$web_root"/
                 else
-                  cp -a /tmp/kajovomail-web-dist/web/dist/. "$web_root"/
+                  cp -a "$uploaded_dist"/. "$web_root"/
                 fi
               else
-                echo "Web root or uploaded dist not found."
+                echo "Web root not found or is not a directory."
                 exit 1
               fi
               if command -v sudo >/dev/null 2>&1; then
@@ -126,3 +128,18 @@ jobs:
             done
             echo "Healthcheck timeout po 40s."
             exit 1
+
+      - name: Verify public web root serves KajovoMail
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            body="$(curl -fsSL https://mail.hcasc.cz || true)"
+            if echo "$body" | grep -q "<title>KajovoMail</title>"; then
+              echo "Public web verification OK (attempt $i)."
+              exit 0
+            fi
+            echo "Waiting for public web update... attempt $i/30"
+            sleep 2
+          done
+          echo "Public web verification failed: KajovoMail title not found."
+          exit 1
