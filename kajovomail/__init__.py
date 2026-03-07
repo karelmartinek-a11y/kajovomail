@@ -1,0 +1,2 @@
+"""KajovoMail desktop launcher package."""
+

@@ -6,6 +6,8 @@ import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Request
 import org.json.JSONObject
 
@@ -25,9 +27,13 @@ class ApiRepository(private val context: Context) {
     private val baseUrl = BuildConfig.BACKEND_URL
 
     suspend fun login(email: String, password: String): Boolean = withContext(Dispatchers.IO) {
+        val payload = JSONObject().apply {
+            put("email", email)
+            put("password", password)
+        }
         val request = Request.Builder()
             .url("$baseUrl/session/login")
-            .post(okhttp3.FormBody.Builder().add("email", email).add("password", password).build())
+            .post(payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType()))
             .build()
         val response = client.newCall(request).execute()
         if (!response.isSuccessful) throw Exception("Failed to login")

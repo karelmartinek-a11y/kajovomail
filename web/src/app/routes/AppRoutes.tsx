@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import type { ReactElement } from 'react'
 
 import { CoreLayout } from '@app/layout/CoreLayout'
 import { StandaloneLayout } from '@app/layout/StandaloneLayout'
+import { useSession } from '@app/providers/SessionProvider'
 import { LoginPage } from '@features/auth/LoginPage'
 import { AccountsPage } from '@features/accounts/AccountsPage'
 import { ComposePage } from '@features/mail/ComposePage'
@@ -13,17 +15,48 @@ import { AIPanelPage } from '@features/ai/AIPanelPage'
 import { OffersPage } from '@features/offers/OffersPage'
 import { SettingsPage } from '@features/settings/SettingsPage'
 
+const RequireAuthenticated = ({ children }: { children: ReactElement }) => {
+  const { status } = useSession()
+  if (status === 'loading') {
+    return null
+  }
+  if (status !== 'authenticated') {
+    return <Navigate to="/login" replace />
+  }
+  return children
+}
+
+const RequireAnonymous = ({ children }: { children: ReactElement }) => {
+  const { status } = useSession()
+  if (status === 'loading') {
+    return null
+  }
+  if (status === 'authenticated') {
+    return <Navigate to="/" replace />
+  }
+  return children
+}
+
 export const AppRoutes = () => (
   <Routes>
     <Route
       path="/login"
       element={
-        <StandaloneLayout>
-          <LoginPage />
-        </StandaloneLayout>
+        <RequireAnonymous>
+          <StandaloneLayout>
+            <LoginPage />
+          </StandaloneLayout>
+        </RequireAnonymous>
       }
     />
-    <Route path="/" element={<CoreLayout />}>
+    <Route
+      path="/"
+      element={
+        <RequireAuthenticated>
+          <CoreLayout />
+        </RequireAuthenticated>
+      }
+    >
       <Route index element={<MailHubPage />} />
       <Route path="accounts" element={<AccountsPage />} />
       <Route path="compose" element={<ComposePage />} />

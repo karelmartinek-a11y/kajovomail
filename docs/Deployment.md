@@ -9,6 +9,7 @@
 - The backend stays behind the `mail.hcasc.cz` reverse proxy and exposes `/api/v1` plus `/api/v1/events/ws`. Celery workers continue to push sync/draft/offer audits to the event stream.
 - Build the SPA with `cd web && npm run build`; the generated `dist/` folder contains the static bundle that references brand tokens without duplication.
 - Static assets are served by the host web server (Nginx, Caddy), while `/api/v1` and `/api/v1/events/ws` are forwarded to the backend container defined in `infra/docker-compose.prod.yml`. Sessions remain server-only, and `x-csrf-token` headers stay paired with HttpOnly cookies.
+- Deploy workflow injects bootstrap login credentials from GitHub: variable `KAJOVOMAIL_LOGIN_EMAIL` and secret `KAJOVOMAIL_LOGIN_PASSWORD`. Backend startup ensures this account exists and keeps the password synchronized.
 
 ## Desktop artifacts
 - Desktop builds live under `desktop/scripts/*` and rely on PyInstaller (`pyinstaller --onefile --windowed --name KajovoMail main.py`). Run the scripts after installing dependencies in `desktop/pyproject.toml`; artifacts appear in `dist/` and connect to the same `mail.hcasc.cz/api/v1` backend.

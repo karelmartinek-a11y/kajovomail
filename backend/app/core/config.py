@@ -22,6 +22,8 @@ class Settings(BaseModel):
     redis_url: str
     secret_key: str = "changeme"
     openai_api_key: str | None = None
+    bootstrap_login_email: str | None = None
+    bootstrap_login_password: str | None = None
 
     artifact_dir: Path = Path("./artifacts")
 
@@ -39,4 +41,6 @@ def get_settings() -> Settings:
         redis_url=_env("REDIS_URL", "redis://localhost:6379/0"),
         secret_key=_env("SECRET_KEY", "change-me"),
         openai_api_key=_env("OPENAI_API_KEY"),
+        bootstrap_login_email=_env("KAJOVOMAIL_LOGIN_EMAIL"),
+        bootstrap_login_password=_env("KAJOVOMAIL_LOGIN_PASSWORD"),
     )
