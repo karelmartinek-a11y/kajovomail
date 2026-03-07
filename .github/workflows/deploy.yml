@@ -82,13 +82,18 @@ jobs:
             fi
             site_conf="$(grep -Rsl 'server_name[[:space:]]\\+mail\\.hcasc\\.cz' /etc/nginx/sites-enabled /etc/nginx/sites-available 2>/dev/null | head -n 1 || true)"
             if [ -n "$site_conf" ]; then
+              echo "Detected nginx site config: $site_conf"
               web_root="$(awk '/^[[:space:]]*root[[:space:]]+/ {print $2}' "$site_conf" | tr -d ';' | head -n 1 || true)"
+              echo "Detected web root: $web_root"
               if [ -n "$web_root" ] && [ -d "$web_root" ] && [ -d /tmp/kajovomail-web-dist/web/dist ]; then
                 if command -v sudo >/dev/null 2>&1; then
                   sudo cp -a /tmp/kajovomail-web-dist/web/dist/. "$web_root"/ || cp -a /tmp/kajovomail-web-dist/web/dist/. "$web_root"/
                 else
                   cp -a /tmp/kajovomail-web-dist/web/dist/. "$web_root"/
                 fi
+              else
+                echo "Web root or uploaded dist not found."
+                exit 1
               fi
               if command -v sudo >/dev/null 2>&1; then
                 sudo nginx -t || nginx -t
@@ -97,6 +102,18 @@ jobs:
                 nginx -t
                 systemctl reload nginx || true
               fi
+              if command -v sudo >/dev/null 2>&1; then
+                deployed_index="$(sudo cat "$web_root/index.html" 2>/dev/null || cat "$web_root/index.html" 2>/dev/null || true)"
+              else
+                deployed_index="$(cat "$web_root/index.html" 2>/dev/null || true)"
+              fi
+              if ! echo "$deployed_index" | grep -q "<title>KajovoMail</title>"; then
+                echo "Deployed index.html does not contain KajovoMail title."
+                exit 1
+              fi
+            else
+              echo "Could not detect nginx site config for mail.hcasc.cz."
+              exit 1
             fi
             for i in $(seq 1 20); do
               if curl -fsS http://127.0.0.1:18100/api/v1/health/live >/dev/null \
