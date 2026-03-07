@@ -14,6 +14,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build web bundle
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload web dist to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          port: ${{ secrets.PROD_PORT }}
+          username: ${{ secrets.PROD_USER }}
+          password: ${{ secrets.PROD_PASSWORD }}
+          source: "web/dist/*"
+          target: "/tmp/kajovomail-web-dist"
+
       - name: SSH Deploy
         uses: appleboy/ssh-action@v1.2.0
         env:
@@ -54,9 +80,23 @@ jobs:
               echo "User AI settings columns verification failed."
               exit 1
             fi
-            web_container="$(docker ps --format '{{.Names}}' | grep '^kajovomail-web-' | head -n 1 || true)"
-            if [ -n "$web_container" ]; then
-              docker exec "$web_container" sh -lc "grep -q \"location.replace('/login')\" /usr/share/nginx/html/index.html || sed -i \"s#</body>#<script>if(location.pathname==='/' ){location.replace('/login')}</script></body>#\" /usr/share/nginx/html/index.html"
+            site_conf="$(grep -Rsl 'server_name[[:space:]]\\+mail\\.hcasc\\.cz' /etc/nginx/sites-enabled /etc/nginx/sites-available 2>/dev/null | head -n 1 || true)"
+            if [ -n "$site_conf" ]; then
+              web_root="$(awk '/^[[:space:]]*root[[:space:]]+/ {print $2}' "$site_conf" | tr -d ';' | head -n 1 || true)"
+              if [ -n "$web_root" ] && [ -d "$web_root" ] && [ -d /tmp/kajovomail-web-dist/web/dist ]; then
+                if command -v sudo >/dev/null 2>&1; then
+                  sudo cp -a /tmp/kajovomail-web-dist/web/dist/. "$web_root"/ || cp -a /tmp/kajovomail-web-dist/web/dist/. "$web_root"/
+                else
+                  cp -a /tmp/kajovomail-web-dist/web/dist/. "$web_root"/
+                fi
+              fi
+              if command -v sudo >/dev/null 2>&1; then
+                sudo nginx -t || nginx -t
+                sudo systemctl reload nginx || systemctl reload nginx || true
+              else
+                nginx -t
+                systemctl reload nginx || true
+              fi
             fi
             for i in $(seq 1 20); do
               if curl -fsS http://127.0.0.1:18100/api/v1/health/live >/dev/null \
