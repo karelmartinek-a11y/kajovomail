@@ -46,9 +46,9 @@ jobs:
             docker exec "$db_container" psql -U kajovo -d kajovo -v ON_ERROR_STOP=1 -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS openai_api_key TEXT;"
             docker exec "$db_container" psql -U kajovo -d kajovo -v ON_ERROR_STOP=1 -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_response_style VARCHAR(32) NOT NULL DEFAULT 'balanced';"
             docker exec "$db_container" psql -U kajovo -d kajovo -v ON_ERROR_STOP=1 -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS openai_model VARCHAR(64);"
-            has_key="$(docker exec "$db_container" psql -U kajovo -d kajovo -tAc \"SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='openai_api_key' LIMIT 1;\" | tr -d '[:space:]')"
-            has_style="$(docker exec "$db_container" psql -U kajovo -d kajovo -tAc \"SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='ai_response_style' LIMIT 1;\" | tr -d '[:space:]')"
-            has_model="$(docker exec "$db_container" psql -U kajovo -d kajovo -tAc \"SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='openai_model' LIMIT 1;\" | tr -d '[:space:]')"
+            has_key="$(docker exec "$db_container" psql -U kajovo -d kajovo -tAc "SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='openai_api_key' LIMIT 1;" | tr -d '[:space:]')"
+            has_style="$(docker exec "$db_container" psql -U kajovo -d kajovo -tAc "SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='ai_response_style' LIMIT 1;" | tr -d '[:space:]')"
+            has_model="$(docker exec "$db_container" psql -U kajovo -d kajovo -tAc "SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='openai_model' LIMIT 1;" | tr -d '[:space:]')"
             if [ "$has_key" != "1" ] || [ "$has_style" != "1" ] || [ "$has_model" != "1" ]; then
               echo "User AI settings columns verification failed."
               exit 1
