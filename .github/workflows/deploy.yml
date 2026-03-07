@@ -75,6 +75,32 @@ jobs:
               echo "Backend container was not found after deploy."
               exit 1
             fi
+            if [ -n "${KAJOVOMAIL_LOGIN_EMAIL:-}" ] && [ -n "${KAJOVOMAIL_LOGIN_PASSWORD:-}" ]; then
+              echo "Ensuring bootstrap login user in backend database..."
+              docker exec -i \
+                -e KAJOVOMAIL_LOGIN_EMAIL="$KAJOVOMAIL_LOGIN_EMAIL" \
+                -e KAJOVOMAIL_LOGIN_PASSWORD="$KAJOVOMAIL_LOGIN_PASSWORD" \
+                "$backend_container" python - <<'PY'
+import asyncio
+import os
+
+from backend.app.db.session import AsyncSessionLocal
+from backend.app.services.auth import ensure_bootstrap_user
+
+
+async def main() -> None:
+    email = (os.environ.get("KAJOVOMAIL_LOGIN_EMAIL") or "").strip()
+    password = os.environ.get("KAJOVOMAIL_LOGIN_PASSWORD") or ""
+    if not email or not password:
+        return
+    async with AsyncSessionLocal() as db:
+        await ensure_bootstrap_user(db, email, password)
+        await db.commit()
+
+
+asyncio.run(main())
+PY
+            fi
             docker exec "$backend_container" alembic -c backend/alembic.ini upgrade head || true
             db_container="$(docker ps --format '{{.Names}}' | grep '^kajovomail-db-' | head -n 1 || true)"
             if [ -z "$db_container" ]; then
@@ -149,14 +175,39 @@ jobs:
             response="$(curl -sS -X POST https://mail.hcasc.cz/api/v1/auth/login \
               -H 'Content-Type: application/json' \
               -d '{"email":"invalid@hcasc.cz","password":"invalid"}' || true)"
-            if echo "$response" | grep -q 'Neplatné přihlašovací údaje'; then
-              echo "Localized auth verification OK (attempt $i)."
+            if echo "$response" | grep -q 'Neplatné přihlašovací údaje\|Invalid credentials'; then
+              echo "Auth error response verification OK (attempt $i)."
               exit 0
             fi
-            echo "Waiting for localized auth response... attempt $i/20"
+            echo "Waiting for auth error response... attempt $i/20"
             sleep 3
           done
-          echo "Localized auth verification failed."
+          echo "Auth error response verification failed."
+          echo "Last response: $response"
+          exit 1
+
+      - name: Verify bootstrap login from secrets works
+        env:
+          LOGIN_EMAIL: ${{ secrets.KAJOVOMAIL_LOGIN_EMAIL }}
+          LOGIN_PASSWORD: ${{ secrets.KAJOVOMAIL_LOGIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${LOGIN_EMAIL:-}" ] || [ -z "${LOGIN_PASSWORD:-}" ]; then
+            echo "Bootstrap login secrets are missing."
+            exit 1
+          fi
+          for i in $(seq 1 20); do
+            response="$(curl -sS -X POST https://mail.hcasc.cz/api/v1/auth/login \
+              -H 'Content-Type: application/json' \
+              -d "{\"email\":\"${LOGIN_EMAIL}\",\"password\":\"${LOGIN_PASSWORD}\"}" || true)"
+            if echo "$response" | grep -q 'session_token'; then
+              echo "Bootstrap login verification OK (attempt $i)."
+              exit 0
+            fi
+            echo "Waiting for bootstrap login to become available... attempt $i/20"
+            sleep 3
+          done
+          echo "Bootstrap login verification failed."
           echo "Last response: $response"
           exit 1
 
