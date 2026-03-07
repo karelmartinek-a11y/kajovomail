@@ -29,13 +29,8 @@ jobs:
           envs: KAJOVOMAIL_LOGIN_EMAIL,KAJOVOMAIL_LOGIN_PASSWORD
           script: |
             set -euo pipefail
-            cd /opt/kajovomail
-            touch backend/.env
-            tmp_env="$(mktemp)"
-            grep -v '^KAJOVOMAIL_LOGIN_EMAIL=' backend/.env | grep -v '^KAJOVOMAIL_LOGIN_PASSWORD=' > "$tmp_env" || true
-            printf "KAJOVOMAIL_LOGIN_EMAIL=%s\n" "$KAJOVOMAIL_LOGIN_EMAIL" >> "$tmp_env"
-            printf "KAJOVOMAIL_LOGIN_PASSWORD=%s\n" "$KAJOVOMAIL_LOGIN_PASSWORD" >> "$tmp_env"
-            mv "$tmp_env" backend/.env
+            export KAJOVOMAIL_LOGIN_EMAIL
+            export KAJOVOMAIL_LOGIN_PASSWORD
             /opt/kajovomail/bootstrap/deploy-local.sh
             for i in $(seq 1 20); do
               if curl -fsS http://127.0.0.1:18100/api/v1/health/live >/dev/null \
