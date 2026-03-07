@@ -65,28 +65,6 @@ jobs:
               exit 1
             fi
             docker exec "$backend_container" alembic -c backend/alembic.ini upgrade head || true
-            if [ -n "${KAJOVOMAIL_LOGIN_EMAIL:-}" ] && [ -n "${KAJOVOMAIL_LOGIN_PASSWORD:-}" ]; then
-              docker exec \
-                -e KAJOVOMAIL_LOGIN_EMAIL="$KAJOVOMAIL_LOGIN_EMAIL" \
-                -e KAJOVOMAIL_LOGIN_PASSWORD="$KAJOVOMAIL_LOGIN_PASSWORD" \
-                "$backend_container" sh -lc "printf '%s\n' \
-                'import asyncio' \
-                'import os' \
-                'from backend.app.db.session import AsyncSessionLocal' \
-                'from backend.app.services import auth as auth_service' \
-                '' \
-                'async def main():' \
-                '    email = os.environ.get(\"KAJOVOMAIL_LOGIN_EMAIL\")' \
-                '    password = os.environ.get(\"KAJOVOMAIL_LOGIN_PASSWORD\")' \
-                '    async with AsyncSessionLocal() as session:' \
-                '        await auth_service.ensure_bootstrap_user(session, email, password)' \
-                '        await session.commit()' \
-                '' \
-                'asyncio.run(main())' > /tmp/kajovomail_bootstrap_sync.py && python /tmp/kajovomail_bootstrap_sync.py"
-            else
-              echo "Bootstrap login credentials are missing in deploy environment."
-              exit 1
-            fi
             db_container="$(docker ps --format '{{.Names}}' | grep '^kajovomail-db-' | head -n 1 || true)"
             if [ -z "$db_container" ]; then
               echo "Database container was not found after deploy."
