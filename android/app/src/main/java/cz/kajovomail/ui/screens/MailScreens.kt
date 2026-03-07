@@ -6,10 +6,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -154,8 +153,65 @@ fun ComposeScreen(viewModel: KajovoMailViewModel) {
 
 @Composable
 fun SettingsScreen(viewModel: KajovoMailViewModel) {
+    LaunchedEffect(Unit) {
+        viewModel.loadAISettings()
+    }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Security & Sessions", fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = viewModel.aiApiKey,
+            onValueChange = viewModel::onAiApiKeyChanged,
+            label = { Text("OpenAI API key") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (viewModel.aiApiKeyMasked.isNotBlank()) {
+            Text("Stored key: ${viewModel.aiApiKeyMasked}", style = MaterialTheme.typography.bodySmall)
+        }
+        Spacer(Modifier.height(8.dp))
+        Text("Response style", fontWeight = FontWeight.Medium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("concise", "balanced", "detailed").forEach { style ->
+                AssistChip(
+                    onClick = { viewModel.onAiResponseStyleChanged(style) },
+                    label = { Text(style) }
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = viewModel.aiSelectedModel,
+            onValueChange = viewModel::onAiModelChanged,
+            label = { Text("OpenAI model") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = viewModel::testAIKey) { Text("Test API key") }
+            Button(onClick = viewModel::loadAIModels) { Text("Load models") }
+        }
+        if (viewModel.aiModels.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text("Available models", fontWeight = FontWeight.Medium)
+            LazyColumn(modifier = Modifier.height(140.dp)) {
+                items(viewModel.aiModels) { model ->
+                    Text(
+                        text = model,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.onAiModelChanged(model) }
+                            .padding(vertical = 4.dp)
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Button(onClick = viewModel::saveAISettings) {
+            Text("Save AI settings")
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(viewModel.aiSettingsStatus, style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(12.dp))
         Button(onClick = viewModel::logout) {
             Text("Logout")

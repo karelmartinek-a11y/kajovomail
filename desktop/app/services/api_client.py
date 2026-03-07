@@ -71,6 +71,31 @@ class ApiClient:
             policy=payload.get('policy', 'store: false'),
         )
 
+    def get_ai_settings(self) -> Dict[str, Any]:
+        return self._handle_response(self.client.get('/settings/ai'))
+
+    def update_ai_settings(
+        self, *, openai_api_key: Optional[str] = None, response_style: Optional[str] = None, model: Optional[str] = None
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {}
+        if openai_api_key is not None:
+            payload['openai_api_key'] = openai_api_key
+        if response_style is not None:
+            payload['response_style'] = response_style
+        if model is not None:
+            payload['model'] = model
+        return self._handle_response(self.client.put('/settings/ai', json=payload))
+
+    def test_openai_key(self, openai_api_key: Optional[str] = None) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {}
+        if openai_api_key is not None:
+            payload['openai_api_key'] = openai_api_key
+        return self._handle_response(self.client.post('/settings/ai/test-key', json=payload))
+
+    def list_openai_models(self) -> List[str]:
+        payload = self._handle_response(self.client.get('/settings/ai/models'))
+        return payload.get('models', [])
+
     def offers(self) -> List[Offer]:
         payload = self._handle_response(self.client.get('/offers'))
         return [Offer(**entry) for entry in payload.get('offers', [])]

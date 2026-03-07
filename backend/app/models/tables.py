@@ -26,6 +26,9 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
+    openai_api_key = Column(Text, nullable=True)
+    ai_response_style = Column(String(32), default="balanced")
+    openai_model = Column(String(64), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 

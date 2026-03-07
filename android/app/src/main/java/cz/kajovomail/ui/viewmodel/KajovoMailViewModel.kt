@@ -28,6 +28,12 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
     val offers = mutableStateListOf<OfferItem>()
     var aiPrompt by mutableStateOf("")
     var aiResponse by mutableStateOf("")
+    var aiApiKey by mutableStateOf("")
+    var aiApiKeyMasked by mutableStateOf("")
+    var aiResponseStyle by mutableStateOf("balanced")
+    var aiSelectedModel by mutableStateOf("")
+    val aiModels = mutableStateListOf<String>()
+    var aiSettingsStatus by mutableStateOf("AI settings not loaded.")
     private var _selectedMessage: MailMessage? = null
     val selectedMessage get() = _selectedMessage
 
@@ -67,6 +73,84 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun logout() {}
+
+    fun loadAISettings() {
+        viewModelScope.launch {
+            try {
+                val settings = repository.fetchAISettings()
+                aiApiKeyMasked = settings.openAIApiKeyMasked
+                aiResponseStyle = settings.responseStyle
+                aiSelectedModel = settings.model
+                aiSettingsStatus = if (settings.hasOpenAIApiKey) {
+                    "Stored key: ${settings.openAIApiKeyMasked}"
+                } else {
+                    "No API key configured."
+                }
+            } catch (e: Exception) {
+                aiSettingsStatus = e.message ?: "Failed to load AI settings."
+            }
+        }
+    }
+
+    fun saveAISettings() {
+        viewModelScope.launch {
+            val ok = repository.updateAISettings(
+                apiKey = aiApiKey.takeIf { it.isNotBlank() },
+                responseStyle = aiResponseStyle,
+                model = aiSelectedModel.takeIf { it.isNotBlank() }
+            )
+            aiSettingsStatus = if (ok) {
+                aiApiKey = ""
+                "AI settings saved."
+            } else {
+                "Failed to save AI settings."
+            }
+        }
+    }
+
+    fun testAIKey() {
+        viewModelScope.launch {
+            try {
+                val (message, models) = repository.testAIKey(aiApiKey.takeIf { it.isNotBlank() })
+                aiSettingsStatus = message
+                aiModels.clear()
+                aiModels.addAll(models)
+                if (aiSelectedModel.isBlank() && models.isNotEmpty()) {
+                    aiSelectedModel = models.first()
+                }
+            } catch (e: Exception) {
+                aiSettingsStatus = e.message ?: "API key test failed."
+            }
+        }
+    }
+
+    fun loadAIModels() {
+        viewModelScope.launch {
+            try {
+                val models = repository.loadAIModels()
+                aiModels.clear()
+                aiModels.addAll(models)
+                if (aiSelectedModel.isBlank() && models.isNotEmpty()) {
+                    aiSelectedModel = models.first()
+                }
+                aiSettingsStatus = "Loaded ${models.size} models."
+            } catch (e: Exception) {
+                aiSettingsStatus = e.message ?: "Failed to load models."
+            }
+        }
+    }
+
+    fun onAiApiKeyChanged(value: String) {
+        aiApiKey = value
+    }
+
+    fun onAiResponseStyleChanged(value: String) {
+        aiResponseStyle = value
+    }
+
+    fun onAiModelChanged(value: String) {
+        aiSelectedModel = value
+    }
 
     fun orchestrateAI() {
         viewModelScope.launch {

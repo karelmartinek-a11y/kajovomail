@@ -7,6 +7,7 @@ from typing import Dict, List
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
+    QComboBox,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -43,6 +44,7 @@ class KajovoMailMainWindow(QMainWindow):
         self._current_folder_id: str | None = None
         self._event_worker: EventStreamWorker | None = None
         self._editing_draft = False
+        self._ai_models: List[str] = []
         self._setup_ui()
         QTimer.singleShot(100, self._run_login)
 
@@ -137,6 +139,33 @@ class KajovoMailMainWindow(QMainWindow):
         offers_layout.addWidget(self.offer_list)
         ai_offers_panel.addTab(offers_panel, "Offers")
 
+        settings_panel = QWidget()
+        settings_layout = QVBoxLayout()
+        settings_panel.setLayout(settings_layout)
+        settings_layout.addWidget(QLabel("OpenAI API key"))
+        self.ai_api_key = QLineEdit()
+        self.ai_api_key.setPlaceholderText("sk-...")
+        self.ai_api_key.setEchoMode(QLineEdit.Password)
+        settings_layout.addWidget(self.ai_api_key)
+        settings_layout.addWidget(QLabel("Response style"))
+        self.ai_style = QComboBox()
+        self.ai_style.addItems(["concise", "balanced", "detailed"])
+        settings_layout.addWidget(self.ai_style)
+        settings_layout.addWidget(QLabel("OpenAI model"))
+        self.ai_model = QComboBox()
+        self.ai_model.setEditable(True)
+        settings_layout.addWidget(self.ai_model)
+        test_key_button = QPushButton("Test API key")
+        test_key_button.clicked.connect(self._test_ai_key)
+        settings_layout.addWidget(test_key_button)
+        load_models_button = QPushButton("Load models")
+        load_models_button.clicked.connect(self._load_ai_models)
+        settings_layout.addWidget(load_models_button)
+        save_settings_button = QPushButton("Save AI settings")
+        save_settings_button.clicked.connect(self._save_ai_settings)
+        settings_layout.addWidget(save_settings_button)
+        ai_offers_panel.addTab(settings_panel, "Settings")
+
         central_split.addWidget(ai_offers_panel)
         central_split.setStretchFactor(1, 2)
         central_split.setStretchFactor(2, 3)
@@ -151,6 +180,7 @@ class KajovoMailMainWindow(QMainWindow):
             self.reader_status("Authenticated as " + (self.session_manager.current_user() or "unknown"))
             self._refresh_accounts()
             self._refresh_offers()
+            self._load_ai_settings()
             self._start_event_stream()
         else:
             self.close()
@@ -277,6 +307,85 @@ class KajovoMailMainWindow(QMainWindow):
 
         threading.Thread(target=task, daemon=True).start()
 
+    def _load_ai_settings(self) -> None:
+        def task() -> None:
+            try:
+                payload = self.api_client.get_ai_settings()
+                QTimer.singleShot(0, lambda: self._apply_ai_settings(payload))
+            except ApiError as exc:
+                QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
+
+        threading.Thread(target=task, daemon=True).start()
+
+    def _apply_ai_settings(self, payload: Dict[str, object]) -> None:
+        style = str(payload.get("response_style", "balanced"))
+        model = str(payload.get("model") or "")
+        index = self.ai_style.findText(style)
+        if index >= 0:
+            self.ai_style.setCurrentIndex(index)
+        self.ai_model.clear()
+        if model:
+            self.ai_model.addItem(model)
+            self.ai_model.setCurrentText(model)
+        masked = payload.get("openai_api_key_masked")
+        if masked:
+            self.ai_api_key.setPlaceholderText(str(masked))
+        self.reader_status("AI settings loaded.")
+
+    def _test_ai_key(self) -> None:
+        key = self.ai_api_key.text().strip() or None
+
+        def task() -> None:
+            try:
+                payload = self.api_client.test_openai_key(key)
+                models = payload.get("models", [])
+                QTimer.singleShot(0, lambda: self._apply_model_list(models))
+                QTimer.singleShot(0, lambda: self.reader_status(str(payload.get("message", "Key test done"))))
+            except ApiError as exc:
+                QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
+
+        threading.Thread(target=task, daemon=True).start()
+
+    def _load_ai_models(self) -> None:
+        def task() -> None:
+            try:
+                models = self.api_client.list_openai_models()
+                QTimer.singleShot(0, lambda: self._apply_model_list(models))
+                QTimer.singleShot(0, lambda: self.reader_status(f"Loaded {len(models)} OpenAI models."))
+            except ApiError as exc:
+                QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
+
+        threading.Thread(target=task, daemon=True).start()
+
+    def _apply_model_list(self, models: List[str]) -> None:
+        current = self.ai_model.currentText()
+        self.ai_model.clear()
+        for model in models:
+            self.ai_model.addItem(model)
+        if current:
+            self.ai_model.setCurrentText(current)
+        elif models:
+            self.ai_model.setCurrentIndex(0)
+
+    def _save_ai_settings(self) -> None:
+        key = self.ai_api_key.text().strip()
+        style = self.ai_style.currentText().strip().lower()
+        model = self.ai_model.currentText().strip()
+
+        def task() -> None:
+            try:
+                self.api_client.update_ai_settings(
+                    openai_api_key=key if key else None,
+                    response_style=style,
+                    model=model if model else None,
+                )
+                QTimer.singleShot(0, lambda: self.ai_api_key.clear())
+                QTimer.singleShot(0, lambda: self.reader_status("AI settings saved."))
+            except ApiError as exc:
+                QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
+
+        threading.Thread(target=task, daemon=True).start()
+
     def _refresh_offers(self) -> None:
         def task() -> None:
             try:
@@ -340,4 +449,3 @@ class KajovoMailMainWindow(QMainWindow):
 
     def reader_status(self, message: str) -> None:
         self.status_label.setText(message)
-

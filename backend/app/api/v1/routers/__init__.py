@@ -9,6 +9,7 @@ from .events import router as events_router
 from .folders import router as folders_router
 from .messages import router as messages_router
 from .offers import router as offers_router
+from .settings import router as settings_router
 from .search import router as search_router
 from .session import router as session_router
 from .users import router as users_router
@@ -25,6 +26,7 @@ api_router.include_router(events_router)
 api_router.include_router(folders_router)
 api_router.include_router(messages_router)
 api_router.include_router(offers_router)
+api_router.include_router(settings_router)
 api_router.include_router(search_router)
 
 __all__ = ["api_router"]

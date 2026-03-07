@@ -184,6 +184,7 @@ body {
 }
 
 .form__field input,
+.form__field select,
 .form__field textarea {
   padding: 0.5rem 0.75rem;
   border-radius: var(--brand-tokens-radius-r8, 8px);
