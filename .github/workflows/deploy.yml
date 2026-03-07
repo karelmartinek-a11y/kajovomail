@@ -58,6 +58,12 @@ jobs:
             set -euo pipefail
             export KAJOVOMAIL_LOGIN_EMAIL
             export KAJOVOMAIL_LOGIN_PASSWORD
+            if [ -d /opt/kajovomail/.git ]; then
+              cd /opt/kajovomail
+              git fetch --all --prune
+              git checkout main
+              git reset --hard "$DEPLOY_SHA"
+            fi
             /opt/kajovomail/bootstrap/deploy-local.sh
             if [ -f /opt/kajovomail/infra/docker-compose.prod.yml ]; then
               echo "Rebuilding backend containers with latest source..."
