@@ -32,7 +32,7 @@ jobs:
             export KAJOVOMAIL_LOGIN_EMAIL
             export KAJOVOMAIL_LOGIN_PASSWORD
             /opt/kajovomail/bootstrap/deploy-local.sh
-            alembic_current="$(docker compose -f /opt/kajovomail/env/docker-compose.prod.local.yml run --rm backend alembic current 2>&1 || true)"
+            alembic_current="$(docker compose -f /opt/kajovomail/env/docker-compose.prod.local.yml run --rm backend alembic -c backend/alembic.ini current 2>&1 || true)"
             echo "$alembic_current"
             if ! echo "$alembic_current" | grep -q "0002_user_ai_settings"; then
               echo "Expected Alembic revision 0002_user_ai_settings was not detected."
