@@ -52,10 +52,16 @@ class Account(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     provider = Column(String(50), nullable=False)
+    provider_type = Column(String(50), nullable=False, default="imap")
     email = Column(String(255), nullable=False)
+    display_name = Column(String(255), nullable=True)
+    server = Column(String(255), nullable=True)
     is_disabled = Column(Boolean, default=False)
+    is_pop3 = Column(Boolean, default=False)
     capability_flags = Column(JSON, default=list)
     credentials = Column(JSON, nullable=False)
+    sync_cursor = Column(String(255), nullable=True)
+    last_sync = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
@@ -87,6 +93,8 @@ class Message(Base):
     provider_uid = Column(String(255), nullable=True)
     metadata_payload = Column("metadata", JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    attachments = relationship("Attachment", back_populates="message")
 
 
 class Draft(Base):
@@ -136,4 +144,17 @@ class AIRequest(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (UniqueConstraint("user_id", "id", name="uq_ai_request_user_id"),)
+    __table_args__ = (UniqueConstraint("user_id", "id", name="uq_ai_request_user_id"),)
+
+
+class Attachment(Base):
+    __tablename__ = "attachments"
+
+    id = Column(Integer, primary_key=True)
+    message_id = Column(Integer, ForeignKey("messages.id"), nullable=False)
+    filename = Column(String(255), nullable=False)
+    content_type = Column(String(255), nullable=False)
+    size = Column(Integer, nullable=False)
+    stored_path = Column(String(1024), nullable=False)
+
+    message = relationship("Message", back_populates="attachments")

@@ -11,8 +11,15 @@ class AccountCreate(BaseModel):
 class AccountRead(BaseModel):
     id: int
     provider: str
+    provider_type: str
     email: EmailStr
-    capability_flags: list[str]
+    display_name: str | None = None
 
     class Config:
-        orm_mode = True
+        orm_mode = True
+
+
+class Capabilities(BaseModel):
+    protocols: list[str]
+    features: list[str]
+    limited: bool | None = None
