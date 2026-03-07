@@ -1,4 +1,3 @@
-import os
 import sys
 
 from PySide6.QtWidgets import QApplication
@@ -6,7 +5,7 @@ from PySide6.QtWidgets import QApplication
 from desktop.app.main import run_desktop
 
 if __name__ == "__main__":
-    os.environ.setdefault("KAJOVOMAIL_API_BASE", "http://localhost:8000/api/v1")
+    # Desktop client is always wired to the production backend; no runtime overrides allowed.
     app = QApplication(sys.argv)
     window = run_desktop()
     window.showMaximized()

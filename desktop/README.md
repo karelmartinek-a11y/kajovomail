@@ -5,7 +5,7 @@ A native PySide6 Qt 6 application for Windows and macOS. The UI communicates sol
 ## Running locally
 1. Create a virtual environment (Python 3.12+). `python -m venv .venv`.
 2. Install deps: `.venv\Scripts\pip install -e .` (Windows) or `./.venv/bin/pip install -e .` (macOS). This installs PySide6, httpx, websockets, keyring, and dotenv support.
-3. Ensure `KAJOVOMAIL_API_BASE` environment variable points to the backend (e.g., `http://localhost:8000/api/v1`).
+3. The app is compiled with the production backend baked in (`https://mail.hcasc.cz/api/v1`). No additional environment configuration is required for end users.
 4. Launch: `.venv\Scripts\python main.py` (Windows) or `./.venv/bin/python main.py` (macOS).
 
 ## Desktop architecture

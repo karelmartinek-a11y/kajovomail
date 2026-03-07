@@ -10,7 +10,7 @@ Single-page React + TypeScript client that consumes the `/api/v1` backend and `/
 
 ## Local development
 1. Install dependencies: `npm install`
-2. Start backend (`docker compose -f infra/docker-compose.dev.yml up --build`) so `/api/v1` is reachable.
+2. Start backend (`docker compose -f infra/docker-compose.dev.yml up --build`) and ensure it is reachable via `https://mail.hcasc.cz/api/v1` (use hosts overrides or a tunnel if needed), because the client is preconfigured with that production URL.
 3. Launch the UI: `npm run dev`
 4. The Vite proxy points to `/api/v1` and honors HttpOnly cookies.
 

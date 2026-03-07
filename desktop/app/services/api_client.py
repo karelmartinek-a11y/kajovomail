@@ -1,5 +1,4 @@
-import os
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -14,7 +13,7 @@ class ApiError(Exception):
 class ApiClient:
     def __init__(self, base_url: Optional[str] = None):
         if not base_url:
-            base_url = os.environ.get('KAJOVOMAIL_API_BASE', 'http://localhost:8000/api/v1')
+            base_url = "https://mail.hcasc.cz/api/v1"
         self.base_url = base_url.rstrip('/')
         self.client = httpx.Client(base_url=self.base_url, timeout=15.0)
 

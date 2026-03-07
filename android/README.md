@@ -16,4 +16,4 @@ Android Studio project implemented in Kotlin + Jetpack Compose. The UI speaks to
 ## Builds
 - `./gradlew assembleDebug` produces `app/build/outputs/apk/debug/app-debug.apk`.
 - `./gradlew bundleRelease` produces `app/build/outputs/bundle/release/app-release.aab`.
-- Use `CAJOVOMAIL_API_BASE` gradle build config for pointing to the backend host.
+- Releases and debug builds are compiled with `BuildConfig.BACKEND_URL` set to `https://mail.hcasc.cz/api/v1`, so no runtime overrides are required.
