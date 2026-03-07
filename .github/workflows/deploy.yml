@@ -69,21 +69,7 @@ jobs:
               docker exec \
                 -e KAJOVOMAIL_LOGIN_EMAIL="$KAJOVOMAIL_LOGIN_EMAIL" \
                 -e KAJOVOMAIL_LOGIN_PASSWORD="$KAJOVOMAIL_LOGIN_PASSWORD" \
-                "$backend_container" sh -lc "python - <<'PY'
-                import asyncio
-                import os
-                from backend.app.db.session import AsyncSessionLocal
-                from backend.app.services import auth as auth_service
-
-                async def main() -> None:
-                    email = os.environ.get('KAJOVOMAIL_LOGIN_EMAIL')
-                    password = os.environ.get('KAJOVOMAIL_LOGIN_PASSWORD')
-                    async with AsyncSessionLocal() as session:
-                        await auth_service.ensure_bootstrap_user(session, email, password)
-                        await session.commit()
-
-                asyncio.run(main())
-                PY"
+                "$backend_container" python -c "import asyncio, os; from backend.app.db.session import AsyncSessionLocal; from backend.app.services import auth as auth_service; exec(\"async def _sync():\\n    email=os.environ.get('KAJOVOMAIL_LOGIN_EMAIL')\\n    password=os.environ.get('KAJOVOMAIL_LOGIN_PASSWORD')\\n    async with AsyncSessionLocal() as session:\\n        await auth_service.ensure_bootstrap_user(session, email, password)\\n        await session.commit()\\n\"); asyncio.run(_sync())"
             else
               echo "Bootstrap login credentials are missing in deploy environment."
               exit 1
