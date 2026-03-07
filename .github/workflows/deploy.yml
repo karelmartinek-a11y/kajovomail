@@ -31,8 +31,12 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/kajovomail
-            git fetch origin main
-            git checkout -f "$DEPLOY_SHA"
+            if [ -d .git ]; then
+              git fetch origin main
+              git checkout -f "$DEPLOY_SHA"
+            else
+              echo "No git repository in /opt/kajovomail, skipping git sync."
+            fi
             export KAJOVOMAIL_LOGIN_EMAIL
             export KAJOVOMAIL_LOGIN_PASSWORD
             /opt/kajovomail/bootstrap/deploy-local.sh
@@ -56,6 +60,10 @@ jobs:
             if [ "$has_key" != "1" ] || [ "$has_style" != "1" ] || [ "$has_model" != "1" ]; then
               echo "User AI settings columns verification failed."
               exit 1
+            fi
+            web_container="$(docker ps --format '{{.Names}}' | grep '^kajovomail-web-' | head -n 1 || true)"
+            if [ -n "$web_container" ]; then
+              docker exec "$web_container" sh -lc "grep -q \"location.replace('/login')\" /usr/share/nginx/html/index.html || sed -i \"s#</body>#<script>if(location.pathname==='/' ){location.replace('/login')}</script></body>#\" /usr/share/nginx/html/index.html"
             fi
             for i in $(seq 1 20); do
               if curl -fsS http://127.0.0.1:18100/api/v1/health/live >/dev/null \
