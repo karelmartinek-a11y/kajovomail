@@ -17,6 +17,7 @@ jobs:
       - name: SSH Deploy
         uses: appleboy/ssh-action@v1.2.0
         env:
+          DEPLOY_SHA: ${{ github.sha }}
           KAJOVOMAIL_LOGIN_EMAIL: ${{ vars.KAJOVOMAIL_LOGIN_EMAIL }}
           KAJOVOMAIL_LOGIN_PASSWORD: ${{ secrets.KAJOVOMAIL_LOGIN_PASSWORD }}
         with:
@@ -26,9 +27,12 @@ jobs:
           password: ${{ secrets.PROD_PASSWORD }}
           script_stop: true
           command_timeout: 25m
-          envs: KAJOVOMAIL_LOGIN_EMAIL,KAJOVOMAIL_LOGIN_PASSWORD
+          envs: DEPLOY_SHA,KAJOVOMAIL_LOGIN_EMAIL,KAJOVOMAIL_LOGIN_PASSWORD
           script: |
             set -euo pipefail
+            cd /opt/kajovomail
+            git fetch origin main
+            git checkout -f "$DEPLOY_SHA"
             export KAJOVOMAIL_LOGIN_EMAIL
             export KAJOVOMAIL_LOGIN_PASSWORD
             /opt/kajovomail/bootstrap/deploy-local.sh
