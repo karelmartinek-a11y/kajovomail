@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.config import get_settings
@@ -14,8 +15,7 @@ async def liveness():
 
 @router.get("/ready")
 async def readiness(db: AsyncSession = Depends(get_db)):
-    settings = get_settings()
     async with db.begin():
-        result = await db.execute("SELECT 1")
+        result = await db.execute(text('SELECT 1'))
         _ = result.scalar()
-    return {"status": "ready", "database": str(settings.database_url)}
+    return {'status': 'ready', 'database': 'ok'}
