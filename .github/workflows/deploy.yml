@@ -2,6 +2,8 @@ name: Deploy
 
 on:
   push:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -100,42 +102,12 @@ jobs:
               exit 1
             fi
             echo "Using uploaded dist: $uploaded_dist"
-            synced_roots=0
-            for web_root in /var/www/mail.hcasc.cz /var/www/html /usr/share/nginx/html /opt/kajovomail/web/dist; do
-              if [ -d "$web_root" ]; then
-                echo "Syncing uploaded dist into: $web_root"
-                if command -v sudo >/dev/null 2>&1; then
-                  sudo cp -a "$uploaded_dist"/. "$web_root"/ || cp -a "$uploaded_dist"/. "$web_root"/ || true
-                else
-                  cp -a "$uploaded_dist"/. "$web_root"/ || true
-                fi
-                synced_roots=$((synced_roots + 1))
-              fi
-            done
-            nginx_dump="$(sudo nginx -T 2>/dev/null || nginx -T 2>/dev/null || true)"
-            if [ -n "$nginx_dump" ]; then
-              for web_root in $(printf '%s\n' "$nginx_dump" | awk '/^[[:space:]]*root[[:space:]]+/ {print $2}' | tr -d ';' | sort -u); do
-                if [ -n "$web_root" ] && [ -d "$web_root" ]; then
-                  echo "Syncing uploaded dist into nginx root: $web_root"
-                  if command -v sudo >/dev/null 2>&1; then
-                    sudo cp -a "$uploaded_dist"/. "$web_root"/ || cp -a "$uploaded_dist"/. "$web_root"/ || true
-                  else
-                    cp -a "$uploaded_dist"/. "$web_root"/ || true
-                  fi
-                  synced_roots=$((synced_roots + 1))
-                fi
-              done
-            fi
-            if [ "$synced_roots" -eq 0 ]; then
-              echo "No known web root directory exists on server."
+            deploy_web_root="/opt/kajovomail/runtime/web"
+            mkdir -p "$deploy_web_root"
+            rsync -a --delete "$uploaded_dist"/ "$deploy_web_root"/
+            if ! grep -q "<title>KajovoMail</title>" "$deploy_web_root/index.html"; then
+              echo "Deployed index.html does not contain KajovoMail title."
               exit 1
-            fi
-            if command -v sudo >/dev/null 2>&1; then
-              sudo nginx -t || nginx -t || true
-              sudo systemctl reload nginx || systemctl reload nginx || true
-            else
-              nginx -t || true
-              systemctl reload nginx || true
             fi
             for i in $(seq 1 20); do
               if curl -fsS http://127.0.0.1:18100/api/v1/health/live >/dev/null \
