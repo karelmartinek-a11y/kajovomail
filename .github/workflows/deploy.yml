@@ -40,7 +40,8 @@ jobs:
           username: ${{ secrets.PROD_USER }}
           password: ${{ secrets.PROD_PASSWORD }}
           source: "web/dist/*"
-          target: "/tmp/kajovomail-web-dist"
+          target: "/home/kajovomail-deploy/tmp-web-dist"
+          rm: true
 
       - name: SSH Deploy
         uses: appleboy/ssh-action@v1.2.0
@@ -93,10 +94,10 @@ jobs:
             docker exec "$db_container" psql -U kajovo -d kajovo -v ON_ERROR_STOP=1 -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS openai_api_key TEXT;"
             docker exec "$db_container" psql -U kajovo -d kajovo -v ON_ERROR_STOP=1 -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_response_style VARCHAR(32) NOT NULL DEFAULT 'balanced';"
             docker exec "$db_container" psql -U kajovo -d kajovo -v ON_ERROR_STOP=1 -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS openai_model VARCHAR(64);"
-            if [ -d /tmp/kajovomail-web-dist/web/dist ]; then
-              uploaded_dist="/tmp/kajovomail-web-dist/web/dist"
-            elif [ -f /tmp/kajovomail-web-dist/index.html ]; then
-              uploaded_dist="/tmp/kajovomail-web-dist"
+            if [ -d /home/kajovomail-deploy/tmp-web-dist/web/dist ]; then
+              uploaded_dist="/home/kajovomail-deploy/tmp-web-dist/web/dist"
+            elif [ -f /home/kajovomail-deploy/tmp-web-dist/index.html ]; then
+              uploaded_dist="/home/kajovomail-deploy/tmp-web-dist"
             else
               echo "Uploaded web dist was not found on server."
               exit 1
