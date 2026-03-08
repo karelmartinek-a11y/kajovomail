@@ -90,7 +90,10 @@ class LoginDialog(QDialog):
             csrf = result.get('csrfToken')
             if csrf:
                 self.session_manager.store_csrf(csrf)
-            self.session_manager.store_current_user(email)
+            user = result.get('user', {})
+            user_id = user.get('id')
+            user_email = user.get('email') or email
+            self.session_manager.store_current_user(user_email, str(user_id) if user_id is not None else None)
             self._async_accept()
         except ApiError as exc:
             self._async_status(str(exc))

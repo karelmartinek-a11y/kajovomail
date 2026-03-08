@@ -46,6 +46,8 @@ class KajovoMailMainWindow(QMainWindow):
         self._messages: Dict[str, Message] = {}
         self._folders: Dict[str, List[Folder]] = {}
         self._current_folder_id: str | None = None
+        self._selected_account_id: str | None = None
+        self._search_results: Dict[str, Message] = {}
         self._event_worker: EventStreamWorker | None = None
         self._editing_draft = False
         self._ai_models: List[str] = []
@@ -122,6 +124,10 @@ class KajovoMailMainWindow(QMainWindow):
         compose_widget = QWidget()
         compose_layout = QVBoxLayout()
         compose_widget.setLayout(compose_layout)
+        compose_layout.addWidget(QLabel("Účet pro koncept"))
+        self.account_selector = QComboBox()
+        self.account_selector.currentIndexChanged.connect(self._on_account_selector_changed)
+        compose_layout.addWidget(self.account_selector)
         self.compose_recipient = QLineEdit()
         self.compose_recipient.setPlaceholderText("prijemce@poskytovatel")
         self.compose_subject = QLineEdit()
@@ -134,6 +140,18 @@ class KajovoMailMainWindow(QMainWindow):
         compose_layout.addWidget(self.compose_subject)
         compose_layout.addWidget(self.compose_body)
         compose_layout.addWidget(send_button)
+        compose_layout.addWidget(QLabel("Hledat ve zprávách"))
+        search_row = QHBoxLayout()
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("fráze pro hledání")
+        search_row.addWidget(self.search_input)
+        self.search_button = QPushButton("Hledat")
+        self.search_button.clicked.connect(self._run_search)
+        search_row.addWidget(self.search_button)
+        compose_layout.addLayout(search_row)
+        self.search_results = QListWidget()
+        self.search_results.itemClicked.connect(self._focus_search_result)
+        compose_layout.addWidget(self.search_results)
         right_main.addWidget(compose_widget)
         central_split.addWidget(right_main)
 
@@ -225,18 +243,46 @@ class KajovoMailMainWindow(QMainWindow):
 
         threading.Thread(target=task, daemon=True).start()
 
+    def _set_selected_account(self, account_id: Optional[str]) -> None:
+        self._selected_account_id = account_id
+        if account_id:
+            self.reader_status(f"Účet {account_id} je vybrán.")
+
     def _populate_accounts(self, accounts: List[Account]) -> None:
         self._accounts = accounts
         self.account_list.clear()
         for account in accounts:
-            QListWidgetItem(f"{account.provider} ({account.email})", self.account_list)
+            item = QListWidgetItem(f"{account.provider.upper()} · {account.email}", self.account_list)
+            item.setData(Qt.UserRole, account.id)
+        self._populate_account_selector(accounts)
+        if accounts:
+            self.account_list.setCurrentRow(0)
+
+    def _populate_account_selector(self, accounts: List[Account]) -> None:
+        self.account_selector.blockSignals(True)
+        self.account_selector.clear()
+        self.account_selector.addItem("Vyberte účet", None)
+        for account in accounts:
+            self.account_selector.addItem(f"{account.email} · {account.provider.upper()}", account.id)
+        self.account_selector.blockSignals(False)
 
     def _on_account_selected(self, current: QListWidgetItem | None) -> None:
         index = self.account_list.row(current) if current else -1
         if index >= 0:
             account = self._accounts[index]
+            self.account_selector.blockSignals(True)
+            combo_index = self.account_selector.findData(account.id)
+            if combo_index >= 0:
+                self.account_selector.setCurrentIndex(combo_index)
+            self.account_selector.blockSignals(False)
+            self._set_selected_account(account.id)
             self._load_folders(account.id)
 
+    def _on_account_selector_changed(self, index: int) -> None:
+        account_id = self.account_selector.itemData(index)
+        if isinstance(account_id, str):
+            self._set_selected_account(account_id)
+            self._load_folders(account_id)
     def _load_folders(self, account_id: str) -> None:
         def task() -> None:
             try:
@@ -296,23 +342,78 @@ class KajovoMailMainWindow(QMainWindow):
     def _send_compose(self) -> None:
         if self._editing_draft:
             return
+        if not self._selected_account_id:
+            self.reader_status("Vyberte účet pro uložení konceptu.")
+            return
+        user_id = self.session_manager.current_user_id()
+        if not user_id:
+            self.reader_status("Uživatel není přihlášen, nelze uložit koncept.")
+            return
         draft = {
-            "to": self.compose_recipient.text(),
+            "recipient": self.compose_recipient.text(),
             "subject": self.compose_subject.text(),
             "body": self.compose_body.toPlainText(),
-            "flags": ["draft"],
         }
 
-        def task() -> None:
-            try:
-                self.api_client.compose(draft)
-                QTimer.singleShot(0, lambda: self.reader_status("Koncept byl zařazen k multipart odeslání."))
-            except ApiError as exc:
-                QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
+            def task() -> None:
+                try:
+                    self.api_client.save_draft(
+                        user_id=int(user_id),
+                        account_id=self._selected_account_id,
+                        plaintext=draft["body"],
+                        html=draft["body"],
+                    )
+                    QTimer.singleShot(0, lambda: self.reader_status("Koncept uložen. Backend jej zpracuje."))
+                except ApiError as exc:
+                    QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
 
         self._editing_draft = True
         threading.Thread(target=task, daemon=True).start()
         QTimer.singleShot(2500, self._reset_draft_flag)
+
+    def _run_search(self) -> None:
+        if not self._selected_account_id:
+            self.reader_status("Vyberte účet pro hledání.")
+            return
+        query = self.search_input.text().strip()
+        if not query:
+            self.reader_status("Zadejte frázi pro hledání.")
+            return
+        self.search_button.setEnabled(False)
+        self.search_results.clear()
+        self._search_results.clear()
+
+        def task() -> None:
+            try:
+                results = self.api_client.search(self._selected_account_id, query, folder_id=self._current_folder_id)
+                QTimer.singleShot(0, lambda: self._populate_search_results(results))
+            except ApiError as exc:
+                QTimer.singleShot(0, lambda: self.reader_status(str(exc)))
+                QTimer.singleShot(0, lambda: self.search_button.setEnabled(True))
+
+        threading.Thread(target=task, daemon=True).start()
+
+    def _populate_search_results(self, results: List[Message]) -> None:
+        self._search_results = {message.id: message for message in results}
+        self.search_results.clear()
+        for message in results:
+            item = QListWidgetItem(f"{message.sender}: {message.subject}")
+            item.setData(Qt.UserRole, message.id)
+            item.setToolTip(message.snippet)
+            self.search_results.addItem(item)
+        self.reader_status(f"Nalezeno {len(results)} výsledků.")
+        self.search_button.setEnabled(True)
+
+    def _focus_search_result(self, item: QListWidgetItem) -> None:
+        message_id = item.data(Qt.UserRole)
+        if not message_id:
+            return
+        message = self._search_results.get(message_id)
+        if not message:
+            return
+        self.reading_pane.setPlainText(
+            f"Od: {message.sender}\nPředmět: {message.subject}\n\n{message.snippet or message.body or ''}"
+        )
 
     def _reset_draft_flag(self) -> None:
         self._editing_draft = False
@@ -325,7 +426,7 @@ class KajovoMailMainWindow(QMainWindow):
 
         def task() -> None:
             try:
-                response = self.api_client.ai_request(prompt)
+                response = self.api_client.ai_request(prompt, account_id=self._selected_account_id)
                 QTimer.singleShot(
                     0,
                     lambda: self.ai_output.setPlainText(

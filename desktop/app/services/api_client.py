@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import httpx
 
@@ -49,7 +49,12 @@ class ApiClient:
 
     def accounts(self) -> List[Account]:
         payload = self._handle_response(self.client.get('/accounts'))
-        return [Account(**entry) for entry in payload.get('accounts', [])]
+        entries: List[Dict[str, Any]]
+        if isinstance(payload, list):
+            entries = payload
+        else:
+            entries = payload.get('accounts', [])
+        return [Account(**entry) for entry in entries]
 
     def folders(self, account_id: str) -> List[Folder]:
         payload = self._handle_response(self.client.get(f'/accounts/{account_id}/folders'))
@@ -59,16 +64,37 @@ class ApiClient:
         payload = self._handle_response(self.client.get(f'/folders/{folder_id}/messages', params={'limit': limit}))
         return [Message(**entry) for entry in payload.get('messages', [])]
 
-    def compose(self, draft: Dict[str, Any]) -> Dict[str, Any]:
-        payload = self._handle_response(self.client.post('/drafts/send', json=draft))
-        return payload
+    def save_draft(self, *, user_id: int, account_id: str, plaintext: str, html: str) -> Dict[str, Any]:
+        payload = {
+            "user_id": user_id,
+            "account_id": account_id,
+            "plaintext": plaintext,
+            "html": html,
+        }
+        return self._handle_response(self.client.post('/drafts/', json=payload))
 
-    def ai_request(self, prompt: str) -> AIResponse:
-        payload = self._handle_response(self.client.post('/ai/responses', json={'prompt': prompt}))
+    def search(self, account_id: str, q: str, folder_id: Optional[str] = None, page: int = 1) -> List[Message]:
+        params = {"account_id": account_id, "q": q, "page": page}
+        if folder_id:
+            params["folder_id"] = folder_id
+        payload = self._handle_response(self.client.get('/search/', params=params))
+        entries: List[Dict[str, Any]]
+        if isinstance(payload, list):
+            entries = payload
+        else:
+            entries = payload.get('messages', [])
+        return [Message(**entry) for entry in entries]
+
+    def ai_request(self, prompt: str, account_id: Optional[str] = None) -> AIResponse:
+        body = {"body": prompt}
+        if account_id:
+            body["account_id"] = int(account_id)
+        payload = self._handle_response(self.client.post('/ai/', json=body))
+        result = payload.get('result', {})
         return AIResponse(
-            summary=payload.get('summary', ''),
-            html_preview=payload.get('htmlPreview', ''),
-            policy=payload.get('policy', 'store: false'),
+            summary=result.get('plaintext', ''),
+            html_preview=result.get('html', ''),
+            policy=result.get('status', ''),
         )
 
     def get_ai_settings(self) -> Dict[str, Any]:

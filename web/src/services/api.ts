@@ -16,6 +16,42 @@ export type ApiError = {
   details?: Record<string, unknown>
 }
 
+export type AccountRead = {
+  id: number
+  provider: string
+  provider_type: string
+  email: string
+  display_name?: string | null
+  capability_flags: string[]
+}
+
+export type AccountCreatePayload = {
+  provider: string
+  email: string
+  credentials: {
+    server?: string
+    protocol?: string
+    display_name?: string
+  }
+  capability_flags?: string[]
+}
+
+export type SearchResult = {
+  id: number
+  subject: string
+  body: string | null
+  sender: string | null
+  created_at: string
+  folder_id?: number | null
+}
+
+export type SearchParams = {
+  account_id: number | string
+  q: string
+  folder_id?: number | string
+  page?: number
+}
+
 const mapStatusToCzech = (status?: number): string | undefined => {
   if (!status) return undefined
   if (status === 400) return 'Požadavek není platný.'
@@ -88,4 +124,34 @@ export const testOpenAIKey = async (openai_api_key?: string) => {
 export const listOpenAIModels = async () => {
   const response = await apiClient.get<{ models: string[] }>('/settings/ai/models')
   return response.data.models
+}
+
+export const listAccounts = async () => {
+  const response = await apiClient.get<AccountRead[]>('/accounts/')
+  return response.data
+}
+
+export const createAccount = async (payload: AccountCreatePayload) => {
+  const response = await apiClient.post<AccountRead>('/accounts/', payload)
+  return response.data
+}
+
+export const testAccountConnection = async (account_id: number | string) => {
+  const response = await apiClient.post<{ ok: boolean }>(`/accounts/${account_id}/test-connection`)
+  return response.data.ok
+}
+
+export const saveDraft = async (payload: {
+  user_id: number | string
+  account_id: number | string
+  plaintext: string
+  html: string
+}) => {
+  const response = await apiClient.post<{ id: number; status: string }>('/drafts/', payload)
+  return response.data
+}
+
+export const searchMessages = async (params: SearchParams) => {
+  const response = await apiClient.get<SearchResult[]>('/search/', { params })
+  return response.data
 }

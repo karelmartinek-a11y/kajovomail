@@ -5,8 +5,10 @@ from typing import List, Optional
 class Account:
     id: str
     provider: str
+    provider_type: str
     email: str
-    capability: str
+    display_name: Optional[str] = None
+    capability_flags: List[str] = ()
 
 @dataclass
 class Folder:
@@ -22,8 +24,10 @@ class Message:
     subject: str
     sender: str
     folder_id: str
-    snippet: str
-    flags: List[str]
+    snippet: Optional[str] = None
+    body: Optional[str] = None
+    created_at: Optional[str] = None
+    flags: List[str] = ()
 
 @dataclass
 class Offer:

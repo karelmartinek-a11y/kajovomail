@@ -40,6 +40,12 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
     var aiSettingsStatus by mutableStateOf("AI nastavení zatím nebylo načteno.")
     private var _selectedMessage: MailMessage? = null
     val selectedMessage get() = _selectedMessage
+    var selectedAccountId by mutableStateOf<String?>(null)
+    var accountStatus by mutableStateOf("Čekám na účty…")
+    var messageStatus by mutableStateOf("Čekám na zprávy…")
+    var searchQuery by mutableStateOf("")
+    val searchResults = mutableStateListOf<MailMessage>()
+    var searchStatus by mutableStateOf("Zadejte dotaz k hledání.")
 
     fun onEmailChanged(value: String) {
         loginState.value = loginState.value.copy(email = value)
@@ -64,7 +70,34 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
 
     private fun loadAccounts() {
         viewModelScope.launch {
-            _accounts.value = repository.fetchAccounts()
+            val loaded = repository.fetchAccounts()
+            _accounts.value = loaded
+            accountStatus = if (loaded.isNotEmpty()) {
+                "Načteno ${loaded.size} účtů."
+            } else {
+                "Žádné připojené účty."
+            }
+            if (loaded.isNotEmpty()) {
+                selectAccount(loaded.first().id)
+            }
+        }
+    }
+
+    fun selectAccount(accountId: String) {
+        selectedAccountId = accountId
+        composeState = composeState.copy(accountId = accountId)
+        loadMessages(accountId)
+    }
+
+    private fun loadMessages(accountId: String) {
+        viewModelScope.launch {
+            val loaded = repository.fetchMessages(accountId)
+            _messages.value = loaded
+            messageStatus = if (loaded.isNotEmpty()) {
+                "Zobrazeno ${loaded.size} zpráv."
+            } else {
+                "Žádné zprávy v účtu."
+            }
         }
     }
 
@@ -89,10 +122,52 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
         composeState = composeState.copy(body = value)
     }
 
+    var draftStatus by mutableStateOf("")
+
     fun sendDraft() {
         viewModelScope.launch {
-            repository.sendDraft(composeState)
+            val accountId = composeState.accountId ?: selectedAccountId
+            if (accountId.isNullOrBlank()) {
+                draftStatus = "Vyberte účet pro odeslání konceptu."
+                return@launch
+            }
+            try {
+                repository.sendDraft(composeState.copy(accountId = accountId))
+                draftStatus = "Koncept uložen."
+            } catch (e: Exception) {
+                draftStatus = e.message ?: "Odeslání konceptu selhalo."
+            }
         }
+    }
+
+    fun onAccountChanged(accountId: String) {
+        composeState = composeState.copy(accountId = accountId)
+    }
+
+    fun onSearchQueryChanged(value: String) {
+        searchQuery = value
+    }
+
+    fun searchMessages() {
+        val accountId = selectedAccountId ?: return
+        if (searchQuery.isBlank()) {
+            searchStatus = "Zadejte výraz pro hledání."
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val results = repository.searchMessages(accountId, searchQuery)
+                searchResults.clear()
+                searchResults.addAll(results)
+                searchStatus = "Nalezeno ${results.size} výsledků."
+            } catch (e: Exception) {
+                searchStatus = e.message ?: "Hledání selhalo."
+            }
+        }
+    }
+
+    fun selectMessage(message: MailMessage) {
+        _selectedMessage = message
     }
 
     fun logout() {
@@ -185,9 +260,13 @@ class KajovoMailViewModel(application: Application) : AndroidViewModel(applicati
 
     fun orchestrateAI() {
         viewModelScope.launch {
-            val response = repository.requestAI(aiPrompt)
+            val response = repository.requestAI(aiPrompt, selectedAccountId)
             aiResponse = response.summary
         }
+    }
+
+    fun onPromptChanged(value: String) {
+        aiPrompt = value
     }
 }
 

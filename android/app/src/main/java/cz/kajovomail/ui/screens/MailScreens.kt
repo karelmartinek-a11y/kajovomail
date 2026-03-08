@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -75,6 +76,8 @@ fun LoginScreen(navController: NavController, viewModel: KajovoMailViewModel) {
 fun AccountsScreen(navController: NavController, viewModel: KajovoMailViewModel) {
     val accounts by viewModel.accounts.collectAsState()
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).padding(bottom = 80.dp)) {
+        Text(viewModel.accountStatus, style = MaterialTheme.typography.bodySmall)
+        Spacer(modifier = Modifier.height(8.dp))
         Text("Účty a složky", fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -92,8 +95,15 @@ fun AccountsScreen(navController: NavController, viewModel: KajovoMailViewModel)
                         .clickable { navController.navigate(Screens.Messages.route) }
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text(account.email, fontWeight = FontWeight.Medium)
-                        Text(account.provider, style = MaterialTheme.typography.bodySmall)
+                        Text(account.displayName ?: account.email, fontWeight = FontWeight.Medium)
+                        Text("${account.provider} · ${account.providerType}", style = MaterialTheme.typography.bodySmall)
+                        if (account.capabilityFlags.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = account.capabilityFlags.joinToString(", "),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
                 }
             }
@@ -105,6 +115,7 @@ fun AccountsScreen(navController: NavController, viewModel: KajovoMailViewModel)
 fun MessageListScreen(navController: NavController, viewModel: KajovoMailViewModel) {
     val virtualViews = listOf("Nepřečtené", "Označené", "S přílohami")
     val messages by viewModel.messages.collectAsState()
+    val searchResults = viewModel.searchResults
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).padding(bottom = 80.dp)) {
         Text("Zprávy", fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
@@ -114,6 +125,38 @@ fun MessageListScreen(navController: NavController, viewModel: KajovoMailViewMod
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = viewModel.searchQuery,
+            onValueChange = viewModel::onSearchQueryChanged,
+            label = { Text("Hledat ve zprávách") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = viewModel::searchMessages) {
+            Text("Spustit hledání")
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(viewModel.searchStatus, style = MaterialTheme.typography.bodySmall)
+        if (searchResults.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Výsledky hledání", fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(4.dp))
+            LazyColumn {
+                items(searchResults) { message ->
+                    ListItem(
+                        modifier = Modifier.clickable {
+                            viewModel.selectMessage(message)
+                            navController.navigate(Screens.MessageDetail.route)
+                        },
+                        headlineText = { Text(message.subject) },
+                        supportingText = { Text(message.sender) }
+                    )
+                    Divider()
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(viewModel.messageStatus, style = MaterialTheme.typography.bodySmall)
         LazyColumn {
             items(messages) { message ->
                 ListItem(
@@ -144,6 +187,23 @@ fun ComposeScreen(viewModel: KajovoMailViewModel) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).padding(bottom = 80.dp)) {
         Text("Napsat zprávu", fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
+        val accounts by viewModel.accounts.collectAsState()
+        Text("Vyberte účet")
+        Spacer(Modifier.height(8.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(accounts) { account ->
+                AssistChip(
+                    onClick = { viewModel.selectAccount(account.id) },
+                    label = { Text(account.displayName ?: account.email) }
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = viewModel.selectedAccountId?.let { "Aktuální účet: $it" } ?: "Účet není vybrán",
+            style = MaterialTheme.typography.bodySmall
+        )
+        Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = viewModel.composeState.recipient,
             onValueChange = viewModel::onRecipientChanged,
@@ -170,6 +230,8 @@ fun ComposeScreen(viewModel: KajovoMailViewModel) {
         Button(onClick = viewModel::sendDraft) {
             Text("Odeslat koncept")
         }
+        Spacer(Modifier.height(8.dp))
+        Text(viewModel.draftStatus, style = MaterialTheme.typography.bodySmall)
     }
 }
 
