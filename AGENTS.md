@@ -30,3 +30,6 @@
 - Never commit secrets. Populate `.env` locally from `.env.example`; production secrets live in secure stores referenced in `docs/Security.md`. Audit logs record state changes but avoid logging raw credentials.
 - The production hostname is `mail.hcasc.cz`; ensure infra manifests and DNS changes leave `hotel.hcasc.cz`, `dagmar.hcasc.cz`, and `api.hcasc.cz` untouched.
 - OpenAI/SMTP keys belong to server-side settings only. Admin endpoints manage them, and clients receive only derived tokens or masked configurations.
+
+## Communication
+- Při práci v tomto repozitáři komunikuj s uživatelem česky.
