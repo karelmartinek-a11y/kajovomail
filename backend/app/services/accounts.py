@@ -30,8 +30,11 @@ async def add_account(session: AsyncSession, payload: AccountCreate, user_id: in
     return account
 
 
-async def discover_capabilities(session: AsyncSession, account_id: int) -> dict:
-    account = await session.get(Account, account_id)
+async def discover_capabilities(session: AsyncSession, account_id: int, user_id: int) -> dict:
+    result = await session.execute(
+        select(Account).where(Account.id == account_id, Account.user_id == user_id)
+    )
+    account = result.scalar_one_or_none()
     if not account:
         raise ValueError("account not found")
     caps = {"protocols": ["IMAP", "SMTP"], "features": ["folders", "threading"]}
@@ -40,8 +43,11 @@ async def discover_capabilities(session: AsyncSession, account_id: int) -> dict:
     return caps
 
 
-async def test_connection(session: AsyncSession, account_id: int) -> bool:
-    account = await session.get(Account, account_id)
+async def test_connection(session: AsyncSession, account_id: int, user_id: int) -> bool:
+    result = await session.execute(
+        select(Account).where(Account.id == account_id, Account.user_id == user_id)
+    )
+    account = result.scalar_one_or_none()
     if not account:
         return False
     return True

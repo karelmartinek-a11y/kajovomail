@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.api.deps import get_current_user
 from backend.app.db.session import get_db
-from backend.app.models.tables import User
 from backend.app.schemas.settings import (
     AIKeyTestRequest,
     AIKeyTestResponse,
@@ -14,9 +13,6 @@ from backend.app.schemas.settings import (
     AISettingsUpdate,
 )
 from backend.app.services import ai as ai_service
-from backend.app.services import auth as auth_service
-
-SESSION_COOKIE_NAME = "kajovo_session"
 ALLOWED_STYLES = {"concise", "balanced", "detailed"}
 
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -30,23 +26,9 @@ def _mask_key(api_key: str | None) -> str | None:
     return f"{api_key[:4]}...{api_key[-4:]}"
 
 
-async def _current_user(request: Request, db: AsyncSession) -> User:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing session")
-    session_model = await auth_service.get_session(db, token)
-    if not session_model:
-        raise HTTPException(status_code=401, detail="Session expired")
-    result = await db.execute(select(User).where(User.id == session_model.user_id))
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-    return user
-
-
 @router.get("/ai", response_model=AISettingsResponse)
 async def get_ai_settings(request: Request, db: AsyncSession = Depends(get_db)):
-    user = await _current_user(request, db)
+    user = await get_current_user(request, db)
     return AISettingsResponse(
         has_openai_api_key=bool(user.openai_api_key),
         openai_api_key_masked=_mask_key(user.openai_api_key),
@@ -57,7 +39,7 @@ async def get_ai_settings(request: Request, db: AsyncSession = Depends(get_db)):
 
 @router.put("/ai", response_model=AISettingsResponse)
 async def update_ai_settings(payload: AISettingsUpdate, request: Request, db: AsyncSession = Depends(get_db)):
-    user = await _current_user(request, db)
+    user = await get_current_user(request, db)
     touched = getattr(payload, "model_fields_set", set()) or getattr(payload, "__fields_set__", set())
 
     if "response_style" in touched and payload.response_style is not None:
@@ -86,7 +68,7 @@ async def update_ai_settings(payload: AISettingsUpdate, request: Request, db: As
 
 @router.post("/ai/test-key", response_model=AIKeyTestResponse)
 async def test_openai_key(payload: AIKeyTestRequest, request: Request, db: AsyncSession = Depends(get_db)):
-    user = await _current_user(request, db)
+    user = await get_current_user(request, db)
     candidate_key = (payload.openai_api_key or "").strip() or (user.openai_api_key or "").strip()
     if not candidate_key:
         return AIKeyTestResponse(valid=False, message="OpenAI API key is not set.", models=[])
@@ -100,7 +82,7 @@ async def test_openai_key(payload: AIKeyTestRequest, request: Request, db: Async
 
 @router.get("/ai/models", response_model=AIModelsResponse)
 async def list_models(request: Request, db: AsyncSession = Depends(get_db)):
-    user = await _current_user(request, db)
+    user = await get_current_user(request, db)
     key = (user.openai_api_key or "").strip()
     if not key:
         raise HTTPException(status_code=400, detail="OpenAI API key is not configured.")
