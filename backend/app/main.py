@@ -26,7 +26,6 @@ app.include_router(api_router)
 
 @app.on_event("startup")
 async def on_startup():
-    ensure_worker()
     async with AsyncSessionLocal() as session:
         await auth_service.ensure_bootstrap_user(
             session,
@@ -34,6 +33,8 @@ async def on_startup():
             settings.bootstrap_login_password,
         )
         await session.commit()
+
+    ensure_worker()
 
 
 @app.on_event("shutdown")
