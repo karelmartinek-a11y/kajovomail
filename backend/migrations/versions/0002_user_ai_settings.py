@@ -10,12 +10,9 @@ depend_on = None
 
 
 def upgrade() -> None:
-    op.add_column("users", sa.Column("openai_api_key", sa.Text(), nullable=True))
-    op.add_column(
-        "users",
-        sa.Column("ai_response_style", sa.String(length=32), nullable=False, server_default="balanced"),
-    )
-    op.add_column("users", sa.Column("openai_model", sa.String(length=64), nullable=True))
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS openai_api_key TEXT")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_response_style VARCHAR(32) DEFAULT 'balanced'")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS openai_model VARCHAR(64)")
 
 
 def downgrade() -> None:
