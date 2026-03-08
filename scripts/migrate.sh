@@ -1,9 +1,5 @@
-#!/usr/bin/env bash 
-set -euo pipefail 
-ECHO is on.
-COMPOSE_FILE=../infra/docker-compose.prod.yml 
-if [ ! -f \" "\ ]; then 
-  echo \" Missing "\ 
-  exit 1 
-fi 
-docker compose -f \" "\ run --rm backend alembic upgrade head 
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd backend
+alembic upgrade head
